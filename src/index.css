@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Times New Roman", Times, Georgia, serif;
+  background-color: #fafaf8;
+  color: #1a1a1a;
+  font-size: 17px;
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Times New Roman", Times, Georgia, serif;
+}
+
+/* Thin scrollbar for editorial feel */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f5f4f0;
+}
+::-webkit-scrollbar-thumb {
+  background: #c8c8c4;
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a4;
+}
+
+/* Link underline transition */
+.link-underline {
+  position: relative;
+  display: inline-block;
+}
+.link-underline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 200ms ease;
+}
+.link-underline:hover::after {
+  transform: scaleX(1);
+}
+
+/* Fade-in on mount */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in {
+  animation: fadeIn 400ms ease-out;
+}
