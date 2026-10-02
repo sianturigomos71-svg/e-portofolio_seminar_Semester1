@@ -15,6 +15,8 @@ export default function PdfViewer() {
   useEffect(() => {
     if (!courseId) return;
 
+    let objectUrl: string | null = null;
+
     const loadDoc = async () => {
       setLoading(true);
       setError(false);
@@ -34,21 +36,30 @@ export default function PdfViewer() {
       const docData = data as ReflectionDocument;
       setDoc(docData);
 
-      const { data: urlData } = supabase.storage
+      // Download the PDF as a blob, then create a local object URL.
+      // Supabase storage sets X-Frame-Options headers that block iframe embedding,
+      // so we can't use the public URL directly in an iframe. A blob URL has no
+      // cross-origin restrictions and works reliably.
+      const { data: fileData, error: downloadError } = await supabase.storage
         .from(REFLECTION_BUCKET)
-        .getPublicUrl(docData.storage_path);
+        .download(docData.storage_path);
 
-      if (!urlData?.publicUrl) {
+      if (downloadError || !fileData) {
         setError(true);
         setLoading(false);
         return;
       }
 
-      setPdfUrl(urlData.publicUrl);
+      objectUrl = URL.createObjectURL(fileData);
+      setPdfUrl(objectUrl);
       setLoading(false);
     };
 
     loadDoc();
+
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
   }, [courseId]);
 
   if (loading) {
@@ -133,10 +144,10 @@ export default function PdfViewer() {
 
       <hr className="border-line mt-8" />
 
-      {/* PDF iframe viewer */}
+      {/* PDF viewer using blob URL */}
       <div className="mt-8">
         <iframe
-          src={`${pdfUrl}#toolbar=1&navpanes=0`}
+          src={pdfUrl}
           title={doc.title}
           className="w-full h-[75vh] border border-line rounded-sm"
         />
