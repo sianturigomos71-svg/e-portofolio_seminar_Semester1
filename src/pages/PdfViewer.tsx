@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { Maximize2, Minimize2 } from 'lucide-react';
 import { supabase, type ReflectionDocument, REFLECTION_BUCKET } from '@/lib/supabase';
 import { courses } from '@/data/courses';
 
@@ -9,8 +10,10 @@ export default function PdfViewer() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const viewerRef = useRef<HTMLDivElement>(null);
 
-  const course = courses.find((c) => c.id === courseId);
+  const course = courses.find((item) => item.id === courseId);
 
   useEffect(() => {
     if (!courseId) return;
@@ -36,10 +39,6 @@ export default function PdfViewer() {
       const docData = data as ReflectionDocument;
       setDoc(docData);
 
-      // Download the PDF as a blob, then create a local object URL.
-      // Supabase storage sets X-Frame-Options headers that block iframe embedding,
-      // so we can't use the public URL directly in an iframe. A blob URL has no
-      // cross-origin restrictions and works reliably.
       const { data: fileData, error: downloadError } = await supabase.storage
         .from(REFLECTION_BUCKET)
         .download(docData.storage_path);
@@ -61,6 +60,31 @@ export default function PdfViewer() {
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [courseId]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement === viewerRef.current);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const enterFullscreen = async () => {
+    if (!viewerRef.current) return;
+
+    if (viewerRef.current.requestFullscreen) {
+      await viewerRef.current.requestFullscreen();
+    }
+    setIsFullscreen(true);
+  };
+
+  const exitFullscreen = async () => {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+    }
+    setIsFullscreen(false);
+  };
 
   if (loading) {
     return (
@@ -91,77 +115,98 @@ export default function PdfViewer() {
 
   return (
     <div className="fade-in max-w-editorial mx-auto px-6 lg:px-10 py-16">
-      {/* Breadcrumb */}
-      <nav className="mb-8">
-        <ol className="flex items-center gap-2 font-serif text-sm text-ink-muted flex-wrap">
-          <li>
-            <Link to="/" className="hover:text-ppg transition-colors duration-200">
-              Beranda
-            </Link>
-          </li>
-          <li className="text-line">/</li>
-          <li>
-            <Link
-              to="/refleksi"
-              className="hover:text-ppg transition-colors duration-200"
-            >
-              Refleksi
-            </Link>
-          </li>
-          <li className="text-line">/</li>
-          <li>
-            <Link
-              to={`/refleksi/${course.id}`}
-              className="hover:text-ppg transition-colors duration-200"
-            >
-              {course.title}
-            </Link>
-          </li>
-          <li className="text-line">/</li>
-          <li className="text-ink">Dokumen</li>
-        </ol>
-      </nav>
-
-      {/* Document info */}
-      <p className="font-serif text-sm text-ppg tracking-widest mb-2">
-        {course.number}
-      </p>
-      <h1 className="font-serif text-2xl md:text-3xl text-ink font-semibold tracking-tight">
-        {doc.title}
-      </h1>
-      {doc.description && (
-        <p className="font-serif text-body text-ink-soft mt-3 max-w-prose">
-          {doc.description}
-        </p>
+      {!isFullscreen && (
+        <nav className="mb-8">
+          <ol className="flex items-center gap-2 font-serif text-sm text-ink-muted flex-wrap">
+            <li>
+              <Link to="/" className="hover:text-ppg transition-colors duration-200">
+                Beranda
+              </Link>
+            </li>
+            <li className="text-line">/</li>
+            <li>
+              <Link
+                to="/refleksi"
+                className="hover:text-ppg transition-colors duration-200"
+              >
+                Refleksi
+              </Link>
+            </li>
+            <li className="text-line">/</li>
+            <li>
+              <Link
+                to={`/refleksi/${course.id}`}
+                className="hover:text-ppg transition-colors duration-200"
+              >
+                {course.title}
+              </Link>
+            </li>
+            <li className="text-line">/</li>
+            <li className="text-ink">Dokumen</li>
+          </ol>
+        </nav>
       )}
-      <p className="font-serif text-sm text-ink-muted mt-3">
-        {doc.file_name} · {new Date(doc.upload_date).toLocaleDateString('id-ID', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        })}
-      </p>
 
-      <hr className="border-line mt-8" />
+      {!isFullscreen && (
+        <>
+          <p className="font-serif text-sm text-ppg tracking-widest mb-2">
+            {course.number}
+          </p>
+          <h1 className="font-serif text-2xl md:text-3xl text-ink font-semibold tracking-tight">
+            {doc.title}
+          </h1>
+          {doc.description && (
+            <p className="font-serif text-body text-ink-soft mt-3 max-w-prose">
+              {doc.description}
+            </p>
+          )}
+          <p className="font-serif text-sm text-ink-muted mt-3">
+            {doc.file_name} · {new Date(doc.upload_date).toLocaleDateString('id-ID', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
+          </p>
+          <hr className="border-line mt-8" />
+        </>
+      )}
 
-      {/* PDF viewer using blob URL */}
-      <div className="mt-8">
+      <div
+        ref={viewerRef}
+        className={`${isFullscreen ? 'fixed inset-0 z-[60] bg-paper p-4 md:p-6 flex flex-col' : 'mt-8'}`}
+      >
+        <div className="flex items-center justify-between gap-4 mb-3">
+          {isFullscreen && (
+            <p className="font-serif text-base text-ink font-semibold truncate">
+              {doc.title}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={isFullscreen ? exitFullscreen : enterFullscreen}
+            className="ml-auto inline-flex items-center gap-2 font-serif text-sm text-white bg-ppg px-4 py-2 hover:bg-ppg-dark transition-colors duration-200"
+          >
+            {isFullscreen ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
+            {isFullscreen ? 'Keluar dari Layar Penuh' : 'Baca Layar Penuh'}
+          </button>
+        </div>
         <iframe
           src={pdfUrl}
           title={doc.title}
-          className="w-full h-[75vh] border border-line rounded-sm"
+          className={`${isFullscreen ? 'flex-1 min-h-0' : 'w-full h-[75vh]'} border border-line rounded-sm`}
         />
       </div>
 
-      {/* Back link */}
-      <div className="mt-8">
-        <Link
-          to={`/refleksi/${course.id}`}
-          className="font-serif text-[15px] text-ppg hover:text-ppg-dark transition-colors duration-200 link-underline"
-        >
-          ← Kembali ke {course.title}
-        </Link>
-      </div>
+      {!isFullscreen && (
+        <div className="mt-8">
+          <Link
+            to={`/refleksi/${course.id}`}
+            className="font-serif text-[15px] text-ppg hover:text-ppg-dark transition-colors duration-200 link-underline"
+          >
+            ← Kembali ke {course.title}
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

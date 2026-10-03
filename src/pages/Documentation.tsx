@@ -1,8 +1,65 @@
+import { useEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, Maximize2, X } from 'lucide-react';
 import { documentationPhotos } from '@/data/courses';
 
-const categories = ['Dokumentasi Semester 1', 'PPL Terbimbing', 'Pembelajaran Mendalam dan Asesmen'];
-
 export default function Documentation() {
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [lightboxFullscreen, setLightboxFullscreen] = useState(false);
+  const lightboxRef = useRef<HTMLDivElement>(null);
+
+  const selectedPhoto = selectedIndex === null ? null : documentationPhotos[selectedIndex];
+
+  useEffect(() => {
+    if (selectedIndex === null) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSelectedIndex(null);
+      } else if (event.key === 'ArrowLeft') {
+        setSelectedIndex((current) =>
+          current === null
+            ? null
+            : (current - 1 + documentationPhotos.length) % documentationPhotos.length,
+        );
+      } else if (event.key === 'ArrowRight') {
+        setSelectedIndex((current) =>
+          current === null ? null : (current + 1) % documentationPhotos.length,
+        );
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [selectedIndex]);
+
+  const closeLightbox = async () => {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+    }
+    setLightboxFullscreen(false);
+    setSelectedIndex(null);
+  };
+
+  const toggleLightboxFullscreen = async () => {
+    if (!lightboxRef.current) return;
+
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+      setLightboxFullscreen(false);
+      return;
+    }
+
+    if (lightboxRef.current.requestFullscreen) {
+      await lightboxRef.current.requestFullscreen();
+      setLightboxFullscreen(true);
+    }
+  };
+
   return (
     <div className="fade-in max-w-editorial mx-auto px-6 lg:px-10 py-16">
       {/* Header */}
@@ -19,49 +76,88 @@ export default function Documentation() {
         </p>
       </div>
 
-      {/* Editorial gallery grouped by activity */}
-      <div className="space-y-16">
-        {categories.map((category) => {
-          const photos = documentationPhotos.filter((photo) => photo.category === category);
-          if (photos.length === 0) return null;
+      <section>
+        <h2 className="font-serif text-2xl text-ink font-semibold border-b border-line pb-3 mb-8">
+          Dokumentasi Semester 1
+        </h2>
 
-          return (
-            <section key={category}>
-              <div className="flex items-baseline justify-between gap-4 border-b border-line pb-3 mb-6">
-                <h2 className="font-serif text-2xl text-ink font-semibold">
-                  {category}
-                </h2>
-                <span className="font-serif text-sm text-ink-muted">
-                  {photos.length} {photos.length === 1 ? 'foto' : 'foto'}
-                </span>
-              </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {documentationPhotos.map((photo, index) => (
+            <button
+              key={photo.image}
+              type="button"
+              onClick={() => setSelectedIndex(index)}
+              className="group block w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ppg focus-visible:ring-offset-4"
+              aria-label="Buka foto dokumentasi"
+            >
+              <img
+                src={photo.image}
+                alt={photo.imageAlt}
+                className="w-full aspect-[4/3] object-cover rounded-sm border border-line transition-opacity duration-200 group-hover:opacity-85"
+                loading="lazy"
+              />
+            </button>
+          ))}
+        </div>
+      </section>
 
-              <div className="columns-1 sm:columns-2 lg:columns-3 gap-6">
-                {photos.map((photo) => (
-                  <figure key={photo.image} className="mb-6 break-inside-avoid">
-                    <img
-                      src={photo.image}
-                      alt={photo.imageAlt}
-                      className="w-full rounded-sm border border-line"
-                      loading="lazy"
-                    />
-                    <figcaption className="mt-3">
-                      <p className="font-serif text-[15px] text-ink font-semibold">
-                        {photo.title}
-                      </p>
-                      {photo.caption && (
-                        <p className="font-serif text-sm text-ink-muted mt-1 leading-relaxed">
-                          {photo.caption}
-                        </p>
-                      )}
-                    </figcaption>
-                  </figure>
-                ))}
-              </div>
-            </section>
-          );
-        })}
-      </div>
+      {selectedPhoto && selectedIndex !== null && (
+        <div
+          ref={lightboxRef}
+          className={`fixed inset-0 z-[60] bg-ink/95 flex items-center justify-center p-4 md:p-8 ${
+            lightboxFullscreen ? 'bg-black' : ''
+          }`}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Foto dokumentasi ukuran besar"
+        >
+          <button
+            type="button"
+            onClick={closeLightbox}
+            className="absolute top-4 right-4 z-10 text-white/90 hover:text-white transition-colors"
+            aria-label="Tutup foto"
+          >
+            <X size={28} strokeWidth={1.5} />
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              setSelectedIndex(
+                (selectedIndex - 1 + documentationPhotos.length) % documentationPhotos.length,
+              )
+            }
+            className="absolute left-3 md:left-8 text-white/90 hover:text-white transition-colors p-2"
+            aria-label="Foto sebelumnya"
+          >
+            <ChevronLeft size={32} strokeWidth={1.5} />
+          </button>
+
+          <img
+            src={selectedPhoto.image}
+            alt={selectedPhoto.imageAlt}
+            className="max-w-full max-h-full object-contain"
+          />
+
+          <button
+            type="button"
+            onClick={() => setSelectedIndex((selectedIndex + 1) % documentationPhotos.length)}
+            className="absolute right-3 md:right-8 text-white/90 hover:text-white transition-colors p-2"
+            aria-label="Foto berikutnya"
+          >
+            <ChevronRight size={32} strokeWidth={1.5} />
+          </button>
+
+          <button
+            type="button"
+            onClick={toggleLightboxFullscreen}
+            className="absolute bottom-4 right-4 text-white/90 hover:text-white transition-colors font-serif text-sm flex items-center gap-2"
+          >
+            <Maximize2 size={18} strokeWidth={1.5} />
+            Layar penuh
+          </button>
+        </div>
+      )}
     </div>
   );
 }
