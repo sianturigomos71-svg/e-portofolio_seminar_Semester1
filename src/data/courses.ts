@@ -192,41 +192,67 @@ export const educationTimeline = [
   { institution: 'PPG Prajabatan', period: 'Pendidikan Profesi · 2026' },
 ];
 
-export const profilePhoto =
-  'https://images.pexels.com/photos/30496625/pexels-photo-30496625.jpeg?auto=compress&cs=tinysrgb&h=650&w=940';
+export const profilePhoto = '/images/IMG_1546.JPG';
 
 export const profilePhotoSecondary =
   'https://images.pexels.com/photos/31409070/pexels-photo-31409070.jpeg?auto=compress&cs=tinysrgb&h=650&w=940';
 
-export const documentationPhotos = [
+export interface DocumentationPhoto {
+  image: string;
+  imageAlt: string;
+  title: string;
+  caption: string;
+  category: string;
+}
+
+export const documentationPhotos: DocumentationPhoto[] = [
   {
-    url: 'https://images.pexels.com/photos/8197551/pexels-photo-8197551.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-    caption: 'Perkuliahan PPG Prajabatan',
-    meta: 'Semester 1 · 2026',
+    image: '/src/assets/documentation/semester1/IMG_20260521_074853.jpg',
+    imageAlt: 'Peserta PPG mengikuti kegiatan pembelajaran di dalam kelas',
+    title: 'Kegiatan Pembelajaran Semester 1',
+    caption: '',
+    category: 'Dokumentasi Semester 1',
   },
   {
-    url: 'https://images.pexels.com/photos/8199134/pexels-photo-8199134.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-    caption: 'Diskusi Kelas',
-    meta: 'Semester 1 · 2026',
+    image: '/src/assets/documentation/semester1/IMG_20260521_075014.jpg',
+    imageAlt: 'Peserta PPG mengikuti kegiatan pembelajaran bersama di dalam kelas',
+    title: 'Suasana Perkuliahan',
+    caption: '',
+    category: 'Dokumentasi Semester 1',
   },
   {
-    url: 'https://images.pexels.com/photos/15149190/pexels-photo-15149190.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-    caption: 'Kegiatan Praktik PJOK',
-    meta: 'Semester 1 · 2026',
+    image: '/src/assets/documentation/semester1/IMG-20260417-WA0035.jpg',
+    imageAlt: 'Peserta PPG berfoto bersama di lingkungan sekolah',
+    title: 'Dokumentasi Kegiatan Semester 1',
+    caption: '',
+    category: 'Dokumentasi Semester 1',
   },
   {
-    url: 'https://images.pexels.com/photos/7972378/pexels-photo-7972378.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-    caption: 'Belajar Kelompok',
-    meta: 'Semester 1 · 2026',
+    image: '/src/assets/documentation/semester1/IMG-20260407-WA0030.jpg',
+    imageAlt: 'Peserta PPG berdiskusi dalam ruang kerja sekolah',
+    title: 'Diskusi dan Koordinasi',
+    caption: '',
+    category: 'PPL Terbimbing',
   },
   {
-    url: 'https://images.pexels.com/photos/7207550/pexels-photo-7207550.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-    caption: 'Praktik Pembelajaran',
-    meta: 'Semester 1 · 2026',
+    image: '/src/assets/documentation/semester1/IMG-20260401-WA0013.jpg',
+    imageAlt: 'Peserta PPG mengikuti kegiatan pembelajaran di ruang kelas',
+    title: 'Kegiatan Pembelajaran',
+    caption: '',
+    category: 'Pembelajaran Mendalam dan Asesmen',
   },
   {
-    url: 'https://images.pexels.com/photos/8197553/pexels-photo-8197553.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-    caption: 'Forum Akademik PPG',
-    meta: 'Semester 1 · 2026',
+    image: '/src/assets/documentation/semester1/IMG-20260218-WA0001.jpg',
+    imageAlt: 'Peserta PPG mengikuti kegiatan belajar bersama di ruang kelas',
+    title: 'Perkuliahan PPG Prajabatan',
+    caption: '',
+    category: 'Dokumentasi Semester 1',
+  },
+  {
+    image: '/src/assets/documentation/semester1/IMG-20260605-WA0003.jpg',
+    imageAlt: 'Peserta PPG berfoto bersama di depan ruang penghargaan sekolah',
+    title: 'Kegiatan Bersama di Sekolah',
+    caption: '',
+    category: 'PPL Terbimbing',
   },
 ];
