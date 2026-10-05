@@ -49,7 +49,7 @@ const artifactsData: ArtifactData[] = [
   {
     id: 'siklus-2',
     cycle: 'Siklus 2',
-    title: 'Unit 3: Lompat Jauh Berdiferensiasi',
+    title: 'Lompat Jauh',
     subject: 'Atletik / Lompat Jauh (Kelas VIII / Fase D)',
     approach: 'Differentiated Instruction (Tomlinson) & Zone of Proximal Development (Vygotsky)',
     products: [
@@ -95,7 +95,7 @@ const artifactsData: ArtifactData[] = [
     ],
     keyConcepts: [
       'Gradasi Tempo Musik: Lambat (60-80 BPM) untuk Pemula, Sedang (80-100 BPM) untuk Menengah, dan Cepat (100-120 BPM) untuk Mahir.',
-      'Diferensiasi Produk Kreasi: Unjuk kerja $2\times8$ hitungan (Pemula), $3\times8$ hitungan dengan alat (Menengah), hingga $4\times8$ hitungan kreasi pola lantai (Mahir).',
+      'Diferensiasi Produk Kreasi: Unjuk kerja 2x8 hitungan untuk Pemula, 3x8 hitungan dengan alat untuk Menengah, serta 4x8 hitungan kreasi pola lantai untuk Mahir.',
       'Refleksi Emosional SEL (Social-Emotional Learning) & Assessment for Learning (AfL).'
     ],
     practicalConnection:
@@ -142,7 +142,7 @@ export default function Artifacts() {
             }`}
           >
             <Sparkles size={16} />
-            {item.cycle}: {item.title.split(' ')[0]} {item.title.split(' ')[1] || ''}
+            {item.cycle}: {item.title}
           </button>
         ))}
       </div>
