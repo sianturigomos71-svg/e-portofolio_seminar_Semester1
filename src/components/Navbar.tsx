@@ -7,6 +7,7 @@ const navItems = [
   { label: 'Tentang', path: '/tentang' },
   { label: 'Refleksi', path: '/refleksi' },
   { label: 'Dokumentasi', path: '/dokumentasi' },
+  { label: 'Artefak', path: '/artefak' },
 ];
 
 export default function Navbar() {
