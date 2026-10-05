@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Maximize2, Minimize2 } from 'lucide-react';
+import { Maximize2, Minimize2, Download } from 'lucide-react';
 import { supabase, type ReflectionDocument, REFLECTION_BUCKET } from '@/lib/supabase';
 import { courses } from '@/data/courses';
 
@@ -175,12 +175,24 @@ export default function PdfViewer() {
         ref={viewerRef}
         className={`${isFullscreen ? 'fixed inset-0 z-[60] bg-paper p-4 md:p-6 flex flex-col' : 'mt-8'}`}
       >
-        <div className="flex items-center justify-between gap-4 mb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           {isFullscreen && (
             <p className="font-serif text-base text-ink font-semibold truncate">
               {doc.title}
             </p>
           )}
+          
+          <a
+            href={pdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            download={doc.file_name}
+            className="inline-flex items-center gap-2 font-serif text-sm text-ppg border border-ppg px-4 py-2 hover:bg-ppg hover:text-white transition-colors duration-200"
+          >
+            <Download size={17} />
+            Buka / Unduh PDF
+          </a>
+
           <button
             type="button"
             onClick={isFullscreen ? exitFullscreen : enterFullscreen}
@@ -190,6 +202,7 @@ export default function PdfViewer() {
             {isFullscreen ? 'Keluar dari Layar Penuh' : 'Baca Layar Penuh'}
           </button>
         </div>
+
         <iframe
           src={pdfUrl}
           title={doc.title}
