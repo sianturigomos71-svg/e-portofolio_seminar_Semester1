@@ -199,7 +199,7 @@ import documentationPhoto04 from '@/assets/documentation/semester1/IMG-20260417-
 import documentationPhoto05 from '@/assets/documentation/semester1/IMG-20260407-WA0030.jpg';
 import documentationPhoto06 from '@/assets/documentation/semester1/IMG-20260424-WA0016.jpg';
 
-export const profilePhoto = '/images/IMG_1546.JPG';
+export const profilePhoto = './images/IMG_1546.JPG';
 
 export const profilePhotoSecondary =
   'https://images.pexels.com/photos/31409070/pexels-photo-31409070.jpeg?auto=compress&cs=tinysrgb&h=650&w=940';
