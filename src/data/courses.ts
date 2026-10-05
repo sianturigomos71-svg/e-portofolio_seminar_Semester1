@@ -192,6 +192,13 @@ export const educationTimeline = [
   { institution: 'PPG Prajabatan', period: 'Pendidikan Profesi · 2026' },
 ];
 
+import documentationPhoto01 from '@/assets/documentation/semester1/IMG_20260521_075014.jpg';
+import documentationPhoto02 from '@/assets/documentation/semester1/IMG_20260521_074905.jpg';
+import documentationPhoto03 from '@/assets/documentation/semester1/IMG-20260401-WA0013.jpg';
+import documentationPhoto04 from '@/assets/documentation/semester1/IMG-20260417-WA0035.jpg';
+import documentationPhoto05 from '@/assets/documentation/semester1/IMG-20260407-WA0030.jpg';
+import documentationPhoto06 from '@/assets/documentation/semester1/IMG-20260424-WA0016.jpg';
+
 export const profilePhoto = '/images/IMG_1546.JPG';
 
 export const profilePhotoSecondary =
@@ -207,52 +214,45 @@ export interface DocumentationPhoto {
 
 export const documentationPhotos: DocumentationPhoto[] = [
   {
-    image: '/src/assets/documentation/semester1/IMG_20260521_074853.jpg',
-    imageAlt: 'Peserta PPG mengikuti kegiatan pembelajaran di dalam kelas',
-    title: 'Kegiatan Pembelajaran Semester 1',
-    caption: '',
-    category: 'Dokumentasi Semester 1',
-  },
-  {
-    image: '/src/assets/documentation/semester1/IMG_20260521_075014.jpg',
+    image: documentationPhoto01,
     imageAlt: 'Peserta PPG mengikuti kegiatan pembelajaran bersama di dalam kelas',
-    title: 'Suasana Perkuliahan',
+    title: '',
     caption: '',
     category: 'Dokumentasi Semester 1',
   },
   {
-    image: '/src/assets/documentation/semester1/IMG-20260417-WA0035.jpg',
-    imageAlt: 'Peserta PPG berfoto bersama di lingkungan sekolah',
-    title: 'Dokumentasi Kegiatan Semester 1',
+    image: documentationPhoto02,
+    imageAlt: 'Peserta PPG mengajar dan berinteraksi dengan peserta didik di dalam kelas',
+    title: '',
     caption: '',
     category: 'Dokumentasi Semester 1',
   },
   {
-    image: '/src/assets/documentation/semester1/IMG-20260407-WA0030.jpg',
-    imageAlt: 'Peserta PPG berdiskusi dalam ruang kerja sekolah',
-    title: 'Diskusi dan Koordinasi',
-    caption: '',
-    category: 'PPL Terbimbing',
-  },
-  {
-    image: '/src/assets/documentation/semester1/IMG-20260401-WA0013.jpg',
+    image: documentationPhoto03,
     imageAlt: 'Peserta PPG mengikuti kegiatan pembelajaran di ruang kelas',
-    title: 'Kegiatan Pembelajaran',
-    caption: '',
-    category: 'Pembelajaran Mendalam dan Asesmen',
-  },
-  {
-    image: '/src/assets/documentation/semester1/IMG-20260218-WA0001.jpg',
-    imageAlt: 'Peserta PPG mengikuti kegiatan belajar bersama di ruang kelas',
-    title: 'Perkuliahan PPG Prajabatan',
+    title: '',
     caption: '',
     category: 'Dokumentasi Semester 1',
   },
   {
-    image: '/src/assets/documentation/semester1/IMG-20260605-WA0003.jpg',
-    imageAlt: 'Peserta PPG berfoto bersama di depan ruang penghargaan sekolah',
-    title: 'Kegiatan Bersama di Sekolah',
+    image: documentationPhoto04,
+    imageAlt: 'Peserta PPG berfoto bersama di lingkungan sekolah',
+    title: '',
     caption: '',
-    category: 'PPL Terbimbing',
+    category: 'Dokumentasi Semester 1',
+  },
+  {
+    image: documentationPhoto05,
+    imageAlt: 'Peserta PPG mengikuti kegiatan pembelajaran di dalam kelas',
+    title: '',
+    caption: '',
+    category: 'Dokumentasi Semester 1',
+  },
+  {
+    image: documentationPhoto06,
+    imageAlt: 'Peserta PPG berfoto bersama di halaman sekolah',
+    title: '',
+    caption: '',
+    category: 'Dokumentasi Semester 1',
   },
 ];
