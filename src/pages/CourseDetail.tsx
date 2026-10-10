@@ -79,11 +79,17 @@ export default function CourseDetail() {
   const { courseId } = useParams<{ courseId: string }>();
   const data = courseId ? detailsData[courseId] : null;
 
+  // Menggunakan Times New Roman dengan ukuran teks ringkas
+  const serifStyle = {
+    fontFamily: '"Times New Roman", Times, Georgia, serif',
+    lineHeight: '1.5'
+  };
+
   if (!data) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-12 text-center font-sans">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Mata Kuliah Tidak Ditemukan</h2>
-        <Link to="/refleksi" className="text-slate-600 hover:text-slate-900 font-medium text-sm">
+      <div style={serifStyle} className="max-w-4xl mx-auto px-4 py-8 text-center text-slate-800">
+        <h2 className="text-lg font-bold mb-2">Mata Kuliah Tidak Ditemukan</h2>
+        <Link to="/refleksi" className="text-blue-900 hover:underline font-semibold text-xs">
           ← Kembali ke Daftar Refleksi
         </Link>
       </div>
@@ -91,83 +97,86 @@ export default function CourseDetail() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 font-sans">
-      {/* Navigasi Kembali */}
+    <div style={serifStyle} className="max-w-4xl mx-auto px-4 py-6 text-slate-900">
       <Link 
         to="/refleksi" 
-        className="inline-flex items-center gap-1.5 text-slate-600 hover:text-slate-900 font-medium text-sm mb-6 transition-colors"
+        className="inline-flex items-center gap-1 text-blue-900 hover:text-blue-700 font-semibold text-xs mb-4 transition-colors"
       >
         ← Kembali ke Daftar Refleksi
       </Link>
 
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 md:p-8 mb-8">
-        {/* Judul Mata Kuliah */}
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-8 border-b border-gray-100 pb-4">
+      <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 md:p-6 mb-6">
+        <h1 className="text-xl md:text-2xl font-bold text-slate-900 mb-5 border-b border-gray-200 pb-3">
           {data.title}
         </h1>
 
         {/* BAGIAN 1: REFLEKSI MODEL 4C */}
-        <div className="mb-10">
-          <div className="flex items-center gap-2 mb-6">
-            <span className="w-1.5 h-6 bg-slate-800 rounded-full"></span>
-            <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wider">
-              Bagian 1: Refleksi Model 4C
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3 border-b border-gray-100 pb-1.5">
+            <span className="w-1 h-4 bg-slate-900 rounded-xs"></span>
+            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+              BAGIAN 1: REFLEKSI MODEL 4C
             </h2>
           </div>
 
-          <div className="space-y-6">
-            <div className="bg-slate-50/70 p-5 rounded-xl border border-slate-100">
-              <h3 className="text-base font-bold text-slate-900 mb-2">1. Connection (Keterkaitan)</h3>
-              <p className="text-gray-700 leading-relaxed text-justify">{data.connection}</p>
+          <div className="space-y-3">
+            {/* Balok 1 */}
+            <div className="bg-slate-100/80 p-3.5 rounded border border-slate-300/80 shadow-xs">
+              <h3 className="text-xs font-bold text-blue-950 mb-1">1. Koneksi (Keterkaitan)</h3>
+              <p className="text-slate-800 text-xs leading-relaxed text-justify">{data.connection}</p>
             </div>
 
-            <div className="bg-slate-50/70 p-5 rounded-xl border border-slate-100">
-              <h3 className="text-base font-bold text-slate-900 mb-2">2. Challenge (Tantangan)</h3>
-              <p className="text-gray-700 leading-relaxed text-justify">{data.challenge}</p>
+            {/* Balok 2 */}
+            <div className="bg-slate-100/80 p-3.5 rounded border border-slate-300/80 shadow-xs">
+              <h3 className="text-xs font-bold text-blue-950 mb-1">2. Tantangan</h3>
+              <p className="text-slate-800 text-xs leading-relaxed text-justify">{data.challenge}</p>
             </div>
 
-            <div className="bg-slate-50/70 p-5 rounded-xl border border-slate-100">
-              <h3 className="text-base font-bold text-slate-900 mb-2">3. Concept (Konsep Utama)</h3>
-              <p className="text-gray-700 leading-relaxed text-justify">{data.concept}</p>
+            {/* Balok 3 */}
+            <div className="bg-slate-100/80 p-3.5 rounded border border-slate-300/80 shadow-xs">
+              <h3 className="text-xs font-bold text-blue-950 mb-1">3. Konsep Utama</h3>
+              <p className="text-slate-800 text-xs leading-relaxed text-justify">{data.concept}</p>
             </div>
 
-            <div className="bg-slate-50/70 p-5 rounded-xl border border-slate-100">
-              <h3 className="text-base font-bold text-slate-900 mb-2">4. Change (Perubahan)</h3>
-              <p className="text-gray-700 leading-relaxed text-justify">{data.change}</p>
+            {/* Balok 4 */}
+            <div className="bg-slate-100/80 p-3.5 rounded border border-slate-300/80 shadow-xs">
+              <h3 className="text-xs font-bold text-blue-950 mb-1">4. Perubahan</h3>
+              <p className="text-slate-800 text-xs leading-relaxed text-justify">{data.change}</p>
             </div>
           </div>
         </div>
 
         {/* BAGIAN 2: ANALISIS ARTEFAK PEMBELAJARAN */}
-        <div className="pt-6 border-t border-gray-100 mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="w-1.5 h-6 bg-emerald-700 rounded-full"></span>
-            <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wider">
-              Bagian 2: Analisis Artefak Pembelajaran
+        <div className="pt-4 border-t border-gray-200 mb-5">
+          <div className="flex items-center gap-2 mb-3 border-b border-gray-100 pb-1.5">
+            <span className="w-1 h-4 bg-emerald-800 rounded-xs"></span>
+            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+              BAGIAN 2: ANALISIS ARTEFAK PEMBELAJARAN
             </h2>
           </div>
 
-          <div className="bg-emerald-50/50 p-5 rounded-xl border border-emerald-100">
-            <p className="text-gray-700 leading-relaxed text-justify">{data.analisisArtefak}</p>
+          {/* Balok Analisis Artefak */}
+          <div className="bg-emerald-50/70 p-3.5 rounded border border-emerald-200 shadow-xs">
+            <p className="text-slate-800 text-xs leading-relaxed text-justify">{data.analisisArtefak}</p>
           </div>
         </div>
 
         {/* DOKUMEN PDF LAMA */}
         {data.pdfUrl && (
-          <div className="pt-6 border-t border-gray-100">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="w-1.5 h-6 bg-blue-700 rounded-full"></span>
-              <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wider">
-                Dokumen Refleksi (PDF)
+          <div className="pt-4 border-t border-gray-200">
+            <div className="flex items-center gap-2 mb-2.5">
+              <span className="w-1 h-4 bg-slate-900 rounded-xs"></span>
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                DOKUMEN REFLEKSI (PDF)
               </h2>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-between bg-blue-50/40 p-4 rounded-xl border border-blue-100 gap-4">
-              <span className="text-sm font-medium text-slate-800">📄 File Dokumen Lembar Kerja 2 (LK 2)</span>
+            <div className="flex flex-col sm:flex-row items-center justify-between bg-slate-100/90 p-3 rounded border border-slate-300/80 gap-2.5">
+              <span className="text-xs font-semibold text-slate-900">📄 File Dokumen Lembar Kerja 2 (LK 2)</span>
               
               <Link
                 to={`/refleksi/${data.id}/dokumen`}
-                className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors"
+                className="inline-flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-white font-medium px-3 py-1.5 rounded text-xs transition-colors"
               >
                 Lihat PDF Selengkapnya →
               </Link>
