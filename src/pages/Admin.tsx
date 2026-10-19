@@ -75,7 +75,7 @@ export default function Admin() {
         .order('upload_date', { ascending: false });
 
       if (error) {
-        console.error('Error fetching reflection_documents:', error);
+        console.error('Error fetching data:', error);
       } else if (data) {
         const mapped: ArtifactItem[] = data.map((doc: any) => ({
           id: String(doc.id || ''),
@@ -161,7 +161,7 @@ export default function Admin() {
       setFiles([]);
       fetchArtifacts();
     } else {
-      setMessage({ type: 'error', text: 'Gagal mengunggah file. Silakan coba lagi.' });
+      setMessage({ type: 'error', text: 'Gagal mengunggah file. Silakan periksa koneksi atau pengaturan Supabase.' });
     }
 
     setUploading(false);
@@ -179,11 +179,14 @@ export default function Admin() {
 
       if (dbErr) throw dbErr;
 
-      setMessage({ type: 'success', text: 'Artefak berhasil dihapus.' });
+      setMessage({ type: 'success', text: 'Artefak berhasil dihapus secara permanen.' });
       setArtifacts((prev) => prev.filter((item) => item.id !== id));
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error delete:', err);
-      setMessage({ type: 'error', text: 'Gagal menghapus file dari database.' });
+      setMessage({
+        type: 'error',
+        text: 'Gagal menghapus file dari database.',
+      });
     }
   };
 
@@ -194,7 +197,7 @@ export default function Admin() {
 
   if (!isAuthenticated) {
     return (
-      <div className="fade-in max-w-md mx-auto px-6 py-20">
+      <div className="fade-in max-w-md mx-auto px-6 py-20" translate="no">
         <div className="bg-paper-warm border border-line p-8 rounded-sm shadow-sm">
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-12 h-12 bg-ppg/10 text-ppg rounded-full mb-3">
@@ -251,7 +254,7 @@ export default function Admin() {
   }
 
   return (
-    <div className="fade-in max-w-editorial mx-auto px-6 lg:px-10 py-16">
+    <div className="fade-in max-w-editorial mx-auto px-6 lg:px-10 py-16" translate="no">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div>
           <span className="font-serif text-xs text-ppg font-semibold bg-ppg/10 px-3 py-1 rounded-sm inline-flex items-center gap-1 mb-2">
@@ -367,15 +370,15 @@ export default function Admin() {
             className="inline-flex items-center gap-2 font-serif text-sm text-white bg-ppg px-6 py-3 rounded-sm hover:bg-ppg-dark transition-colors duration-200 disabled:opacity-50"
           >
             {uploading ? (
-              <>
+              <span className="flex items-center gap-2">
                 <Loader2 size={18} className="animate-spin" />
                 <span>Mengunggah {files.length} File...</span>
-              </>
+              </span>
             ) : (
-              <>
+              <span className="flex items-center gap-2">
                 <Upload size={18} />
                 <span>Unggah {files.length > 0 ? files.length + ' File' : ''} Sekarang</span>
-              </>
+              </span>
             )}
           </button>
         </form>
