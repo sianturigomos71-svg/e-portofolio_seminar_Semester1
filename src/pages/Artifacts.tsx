@@ -35,30 +35,23 @@ export default function Artifacts() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('artifacts')
+        .from('reflection_documents')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('upload_date', { ascending: false });
 
       if (error) {
-        const { data: refData } = await supabase
-          .from('reflection_documents')
-          .select('*')
-          .order('upload_date', { ascending: false });
-
-        if (refData) {
-          const mapped: ArtifactItem[] = refData.map((doc: any) => ({
-            id: String(doc.id || ''),
-            title: String(doc.title || ''),
-            description: String(doc.description || ''),
-            category: String(doc.course_id || 'Mata Kuliah Lainnya'),
-            file_name: String(doc.file_name || ''),
-            storage_path: String(doc.storage_path || ''),
-            created_at: String(doc.upload_date || new Date().toISOString()),
-          }));
-          setArtifacts(mapped);
-        }
+        console.error('Error fetching reflection_documents:', error);
       } else if (data) {
-        setArtifacts(data as ArtifactItem[]);
+        const mapped: ArtifactItem[] = data.map((doc: any) => ({
+          id: String(doc.id || ''),
+          title: String(doc.title || ''),
+          description: String(doc.description || ''),
+          category: String(doc.course_id || 'Mata Kuliah Lainnya'),
+          file_name: String(doc.file_name || ''),
+          storage_path: String(doc.storage_path || ''),
+          created_at: String(doc.upload_date || new Date().toISOString()),
+        }));
+        setArtifacts(mapped);
       }
     } catch (err) {
       console.error('Gagal mengambil data artefak:', err);
@@ -96,13 +89,14 @@ export default function Artifacts() {
         <button
           onClick={() => setSelectedCategory('Semua')}
           className={
-            "font-serif text-xs px-3.5 py-2 rounded-sm transition-all duration-200 flex items-center gap-1.5 " +
+            'font-serif text-xs px-3.5 py-2 rounded-sm transition-all duration-200 flex items-center gap-1.5 ' +
             (selectedCategory === 'Semua'
               ? 'bg-ppg text-white shadow-sm font-semibold'
               : 'bg-paper-warm text-ink-soft hover:bg-line-soft hover:text-ink')
           }
         >
-          <Sparkles size={14} /> Semua Mata Kuliah
+          <Sparkles size={14} />
+          <span>Semua Mata Kuliah</span>
         </button>
 
         {COURSES.map((course) => (
@@ -110,31 +104,37 @@ export default function Artifacts() {
             key={course.id}
             onClick={() => setSelectedCategory(course.id)}
             className={
-              "font-serif text-xs px-3.5 py-2 rounded-sm transition-all duration-200 flex items-center gap-1.5 " +
+              'font-serif text-xs px-3.5 py-2 rounded-sm transition-all duration-200 flex items-center gap-1.5 ' +
               (selectedCategory === course.id
                 ? 'bg-ppg text-white shadow-sm font-semibold'
                 : 'bg-paper-warm text-ink-soft hover:bg-line-soft hover:text-ink')
             }
           >
-            {course.id}
+            <span>{course.id}</span>
           </button>
         ))}
       </div>
 
       {loading ? (
         <div className="text-center py-16 font-serif text-ink-muted flex items-center justify-center gap-2">
-          <Loader2 size={22} className="animate-spin text-ppg" /> Memuat dokumen artefak...
+          <Loader2 size={22} className="animate-spin text-ppg" />
+          <span>Memuat dokumen artefak...</span>
         </div>
       ) : filteredArtifacts.length === 0 ? (
         <div className="bg-paper-warm border border-line p-10 text-center rounded-sm">
-          <p className="font-serif text-body text-ink-muted">Belum ada artefak yang diunggah untuk Mata Kuliah ini.</p>
+          <p className="font-serif text-body text-ink-muted">
+            Belum ada artefak yang diunggah untuk Mata Kuliah ini.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredArtifacts.map((item) => {
             const fileUrl = getPublicUrl(item.storage_path);
             return (
-              <div key={item.id} className="bg-white border border-line p-6 rounded-sm flex flex-col justify-between space-y-4 hover:shadow-sm transition-shadow">
+              <div
+                key={item.id}
+                className="bg-white border border-line p-6 rounded-sm flex flex-col justify-between space-y-4 hover:shadow-sm transition-shadow"
+              >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <span className="font-serif text-xs font-semibold text-ppg bg-ppg/10 px-2.5 py-1 rounded-sm">
@@ -151,12 +151,16 @@ export default function Artifacts() {
 
                   <h3 className="font-serif text-lg text-ink font-semibold flex items-start gap-2">
                     <FileText size={20} className="text-ppg shrink-0 mt-0.5" />
-                    {item.title}
+                    <span>{item.title}</span>
                   </h3>
                   {item.description ? (
-                    <p className="font-serif text-sm text-ink-soft mt-2 leading-relaxed">{item.description}</p>
+                    <p className="font-serif text-sm text-ink-soft mt-2 leading-relaxed">
+                      {item.description}
+                    </p>
                   ) : null}
-                  <p className="font-serif text-xs text-ink-muted mt-3 truncate">📄 {item.file_name}</p>
+                  <p className="font-serif text-xs text-ink-muted mt-3 truncate">
+                    📄 {item.file_name}
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-3 pt-3 border-t border-line-soft">
@@ -166,7 +170,8 @@ export default function Artifacts() {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 font-serif text-xs text-ppg border border-ppg px-4 py-2 rounded-sm hover:bg-ppg hover:text-white transition-colors"
                   >
-                    <Eye size={15} /> Lihat Dokumen
+                    <Eye size={15} />
+                    <span>Lihat Dokumen</span>
                   </a>
 
                   <a
@@ -174,7 +179,8 @@ export default function Artifacts() {
                     download={item.file_name}
                     className="inline-flex items-center gap-1.5 font-serif text-xs text-ink-soft border border-line px-4 py-2 rounded-sm hover:bg-paper-warm transition-colors"
                   >
-                    <Download size={15} /> Unduh
+                    <Download size={15} />
+                    <span>Unduh</span>
                   </a>
                 </div>
               </div>
