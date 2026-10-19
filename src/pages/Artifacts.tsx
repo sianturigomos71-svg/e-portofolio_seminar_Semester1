@@ -1,117 +1,173 @@
-import { useState } from 'react';
-import { BookOpen, CheckCircle2, Target, Award, Layers, Sparkles } from 'lucide-react';
+import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
+import { Upload, FileText, Trash2, Download, Eye, Plus, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { supabase, REFLECTION_BUCKET } from '@/lib/supabase';
 
-interface ArtifactData {
+export interface ArtifactItem {
   id: string;
   title: string;
-  subject: string;
-  cycle: string;
-  approach: string;
-  products: string[];
-  identification: string;
-  reasons: string[];
-  keyConcepts: string[];
-  practicalConnection: string;
-  futurePlans: string[];
+  description: string;
+  category: string;
+  file_name: string;
+  storage_path: string;
+  created_at: string;
+  file_url?: string;
 }
 
-const artifactsData: ArtifactData[] = [
-  {
-    id: 'siklus-1',
-    cycle: 'Siklus 1',
-    title: 'Gerak Spesifik Lay-up Shoot Bola Basket',
-    subject: 'Bola Basket (Kelas VIII / Fase D)',
-    approach: 'Deep Learning (Mindful, Meaningful, Joyful) & Pembelajaran Berdiferensiasi Berbasis Stasiun',
-    products: [
-      'Modul Ajar PJOK: Gerak Spesifik Lay-up Shoot (Deep Learning & Station Rotation)',
-      'LKPD "Petualangan Lay-up Shoot" (Integrasi Analogi Sehari-hari & Self-Tracking)'
-    ],
-    identification:
-      'Artefak ini terdiri dari Modul Ajar 3 pertemuan dan LKPD tematik "Petualangan Lay-up Shoot". Produk ini memadukan pendekatan Deep Learning dengan model pembelajaran berdiferensiasi berbasis stasiun (Pemula, Menengah, Mahir) untuk mengatasi heterogenitas kemampuan fisik murid SMP.',
-    reasons: [
-      'Menjembatani konsep gerak teknis yang rumit melalui analogi kehidupan sehari-hari (seperti meraih benda di rak tinggi/melompati got).',
-      'Menyediakan instrumen mandiri (self-tracking) kuantitatif dan kualitatif untuk melatih kesadaran metakognitif murid.',
-      'Menjamin keadilan asesmen melalui rubrik berjenjang skala 1–4 yang disesuaikan dengan tingkat kemampuan murid.'
-    ],
-    keyConcepts: [
-      'Mindful: Kesadaran tubuh saat bergerak melalui slow-motion drill dan refleksi rasa gerak.',
-      'Meaningful: Menghubungkan teknik lay-up dengan konteks keputusan taktis dalam permainan nyata.',
-      'Joyful: Pengemasan tantangan bertingkat, mini-game 2v1, dan pemilihan bentuk unjuk kerja akhir secara mandiri.'
-    ],
-    practicalConnection:
-      'Pembelajaran gerak tidak efektif jika diseragamkan untuk semua siswa. Penerapan rotasi stasiun terbukti membantu murid pemula membangun koordinasi langkah tanpa tekanan, sementara murid mahir tetap tertantang melalui situasi permainan nyata.',
-    futurePlans: [
-      'Mengembangkan mitigasi skenario pembelajaran outdoor saat terjadi perubahan cuaca atau keterbatasan sarana.',
-      'Menambahkan petunjuk operasional yang lebih rinci pada lembar asesmen teman sejawat (peer-assessment).',
-      'Mengintegrasikan alternatif refleksi berbasis visual/audio untuk mengakomodasi murid dengan tantangan literasi menulis.'
-    ]
-  },
-  {
-    id: 'siklus-2',
-    cycle: 'Siklus 2',
-    title: 'Lompat Jauh',
-    subject: 'Atletik / Lompat Jauh (Kelas VIII / Fase D)',
-    approach: 'Differentiated Instruction (Tomlinson) & Zone of Proximal Development (Vygotsky)',
-    products: [
-      'Modul Ajar Berdiferensiasi Lompat Jauh (6 JP / 2 Pertemuan)',
-      'LKPD "Ayo, Jadi Juara Lompat Jauh!" (4 Halaman Multidimensi)'
-    ],
-    identification:
-      'Artefak ini dirancang sebagai respons terhadap variasi kemampuan motorik murid dalam cabang olahraga atletik. Terdiri dari Modul Ajar berdiferensiasi 3 zona (Pemula, Menengah, Mahir) dan LKPD interaktif yang mencakup ranah kognitif, psikomotor, dan afektif.',
-    reasons: [
-      'Mengadopsi kerangka Tomlinson dengan membedakan Konten (video/infografis), Proses (panjang awalan 5-15 langkah), dan Produk.',
-      'Menerapkan prinsip scaffolding dan Tutor Sebaya (Learning by Teaching) sesuai teori Zone of Proximal Development Vygotsky.',
-      'Pengelompokan fleksibel dan dinamis yang mencegah pelabelan negatif (labeling) pada murid pemula.'
-    ],
-    keyConcepts: [
-      'Pengelolaan Kelas 3 Zona: Zona A (awalan pendek/matras), Zona B (awalan sedang/papan tumpu), Zona C (awalan panjang/target sudut).',
-      'Multi-modalitas Pembelajaran: Mengakomodasi gaya belajar visual, auditori, dan kinestetik.',
-      'Self-Determination Theory: Membangun otonomi (autonomy), kompetensi (competence), dan keterhubungan (relatedness).'
-    ],
-    practicalConnection:
-      'Penyesuaian jarak awalan dan media pendaratan (matras vs bak pasir) terbukti menurunkan kecemasan murid pemula, sehingga seluruh murid dapat merasakan pencapaian (sense of achievement) sesuai kapasitasnya.',
-    futurePlans: [
-      'Merancang instrumen asesmen diagnostik terstandarisasi sebelum pembagian zona latihan.',
-      'Menyediakan skenario adaptasi alat untuk sekolah dengan sarana terbatas (misal: penggunaan tali/garis kapur pengganti papan tumpu).',
-      'Penyelarasan otomatis antara poin pertanyaan kuis di LKPD dengan tingkat diferensiasi modul.'
-    ]
-  },
-  {
-    id: 'siklus-3',
-    cycle: 'Siklus 3',
-    title: 'Aktivitas Gerak Berirama',
-    subject: 'Senam Berirama (Kelas VIII / Fase D)',
-    approach: 'Deep Learning, Multiple Intelligences (Gardner) & Zero Judgment Zone',
-    products: [
-      'Modul Ajar Aktivitas Gerak Berirama (Deep Learning & 3 Level Stasiun)',
-      'LKPD Aktivitas Gerak Berirama "Setiap Gerakan adalah Ekspresi Dirimu!"'
-    ],
-    identification:
-      'Artefak ini memadukan olahraga ekspresif-performatif dengan konteks budaya populer remaja (TikTok Dance, K-Pop, Poco-Poco). Berisi Modul Ajar 2 pertemuan dan LKPD inklusif yang mencakup pengamatan gerak, checklist koordinasi, hingga rancangan kreasi pola lantai.',
-    reasons: [
-      'Mengintegrasikan pilar Mindful (body scan & napas sadar), Meaningful (kebugaran & tren remaja), dan Joyful (Freeze Dance & Momen Bintang).',
-      'Menciptakan iklim psikologis aman (Zero Judgment Zone) untuk mengatasi kecemasan tampil di depan umum.',
-      'Mengakomodasi kecerdasan majemuk: Kinestetik, Musikal, Interpersonal, Intrapersonal, dan Spasial.'
-    ],
-    keyConcepts: [
-      'Gradasi Tempo Musik: Lambat (60-80 BPM) untuk Pemula, Sedang (80-100 BPM) untuk Menengah, dan Cepat (100-120 BPM) untuk Mahir.',
-      'Diferensiasi Produk Kreasi: Unjuk kerja 2x8 hitungan untuk Pemula, 3x8 hitungan dengan alat untuk Menengah, serta 4x8 hitungan kreasi pola lantai untuk Mahir.',
-      'Refleksi Emosional SEL (Social-Emotional Learning) & Assessment for Learning (AfL).'
-    ],
-    practicalConnection:
-      'Menggunakan referensi musik dan tren yang dekat dengan dunia siswa terbukti meningkatkan motivasi intrinsik dan partisipasi aktif murid dalam pembelajaran senam berirama.',
-    futurePlans: [
-      'Menyediakan variasi LKPD yang terdeferensiasi sesuai tingkat literasi reflektif siswa.',
-      'Mengembangkan skenario pembelajaran berbasis budaya lokal (seperti Tari Tor-Tor atau Poco-Poco) untuk sekolah dengan konteks khusus.',
-      'Menambahkan modul pendamping untuk siswa berkebutuhan khusus (inklusif/adaptif).'
-    ]
-  }
+const CATEGORIES = [
+  { id: 'Siklus 1', label: 'Siklus 1 - Bola Basket' },
+  { id: 'Siklus 2', label: 'Siklus 2 - Lompat Jauh' },
+  { id: 'Siklus 3', label: 'Siklus 3 - Senam Berirama' },
+  { id: 'Umum', label: 'Dokumen / Artefak Umum' },
 ];
 
 export default function Artifacts() {
-  const [activeTab, setActiveTab] = useState<string>('siklus-1');
+  const [artifacts, setArtifacts] = useState<ArtifactItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [uploading, setUploading] = useState<boolean>(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('Semua');
 
-  const currentArtifact = artifactsData.find((item) => item.id === activeTab) || artifactsData[0];
+  // Form State
+  const [title, setTitle] = useState<string>('');
+  const [category, setCategory] = useState<string>('Siklus 1');
+  const [description, setDescription] = useState<string>('');
+  const [file, setFile] = useState<File | null>(null);
+
+  // Status Message
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  useEffect(() => {
+    fetchArtifacts();
+  }, []);
+
+  const fetchArtifacts = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('artifacts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        // Fallback jika tabel 'artifacts' belum dibuat di Supabase
+        const { data: refData } = await supabase
+          .from('reflection_documents')
+          .select('*')
+          .order('upload_date', { ascending: false });
+
+        if (refData) {
+          const mapped = refData.map((doc: any) => ({
+            id: doc.id,
+            title: doc.title,
+            description: doc.description || '',
+            category: doc.course_id || 'Umum',
+            file_name: doc.file_name,
+            storage_path: doc.storage_path,
+            created_at: doc.upload_date,
+          }));
+          setArtifacts(mapped);
+        }
+      } else if (data) {
+        setArtifacts(data);
+      }
+    } catch (err) {
+      console.error('Gagal mengambil data artefak:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+    }
+  };
+
+  const handleUpload = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!file || !title.trim()) {
+      setMessage({ type: 'error', text: 'Harap isi judul dan pilih file terlebih dahulu.' });
+      return;
+    }
+
+    setUploading(true);
+    setMessage(null);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+      const filePath = `artifacts/${fileName}`;
+
+      // 1. Upload file ke Supabase Storage
+      const { error: storageError } = await supabase.storage
+        .from(REFLECTION_BUCKET)
+        .upload(filePath, file);
+
+      if (storageError) throw storageError;
+
+      // 2. Simpan metadata file ke database
+      const newArtifact = {
+        title: title.trim(),
+        category,
+        description: description.trim(),
+        file_name: file.name,
+        storage_path: filePath,
+        created_at: new Date().toISOString(),
+      };
+
+      const { error: dbError } = await supabase.from('artifacts').insert([newArtifact]);
+
+      if (dbError) {
+        // Fallback jika tabel 'artifacts' belum ada
+        await supabase.from('reflection_documents').insert([
+          {
+            course_id: category,
+            title: title.trim(),
+            description: description.trim(),
+            file_name: file.name,
+            storage_path: filePath,
+            upload_date: new Date().toISOString(),
+          },
+        ]);
+      }
+
+      setMessage({ type: 'success', text: 'Artefak berhasil diunggah!' });
+      setTitle('');
+      setDescription('');
+      setFile(null);
+      fetchArtifacts();
+    } catch (err: any) {
+      console.error('Error upload:', err);
+      setMessage({ type: 'error', text: `Gagal mengunggah file: ${err.message || 'Terjadi kesalahan'}` });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDelete = async (id: string, storagePath: string) => {
+    if (!window.confirm('Apakah Anda yakin ingin menghapus artefak ini?')) return;
+
+    try {
+      await supabase.storage.from(REFLECTION_BUCKET).remove([storagePath]);
+      await supabase.from('artifacts').delete().eq('id', id);
+      await supabase.from('reflection_documents').delete().eq('id', id);
+
+      setMessage({ type: 'success', text: 'Artefak berhasil dihapus.' });
+      fetchArtifacts();
+    } catch (err) {
+      console.error('Error delete:', err);
+      setMessage({ type: 'error', text: 'Gagal menghapus file.' });
+    }
+  };
+
+  const getPublicUrl = (storagePath: string) => {
+    const { data } = supabase.storage.from(REFLECTION_BUCKET).getPublicUrl(storagePath);
+    return data.publicUrl;
+  };
+
+  const filteredArtifacts =
+    selectedCategory === 'Semua'
+      ? artifacts
+      : artifacts.filter((item) => item.category === selectedCategory);
 
   return (
     <div className="fade-in max-w-editorial mx-auto px-6 lg:px-10 py-16">
@@ -121,141 +177,208 @@ export default function Artifacts() {
           E-Portofolio · PPG Prajabatan PJOK
         </p>
         <h1 className="font-serif text-3xl md:text-4xl text-ink font-semibold tracking-tight">
-          Artefak & Analisis Reflektif
+          Unggah & Kelola Artefak
         </h1>
         <p className="font-serif text-body text-ink-soft mt-4 max-w-prose leading-relaxed">
-          Dokumentasi produk pembelajaran pilihan (Modul Ajar & LKPD) beserta analisis komprehensif kendala, pemetaan teori pedagogi, dan kaitan praktisnya dalam pelaksanaan PPL Terbimbing.
+          Ruang untuk mengunggah, menyimpan, dan menampilkan dokumen artefak pembelajaran seperti Modul Ajar, LKPD, jurnal refleksi, atau berkas pendukung lainnya.
         </p>
         <hr className="border-line mt-8" />
       </div>
 
-      {/* Navigasi Siklus Tab */}
-      <div className="flex flex-wrap gap-3 mb-10 border-b border-line pb-4">
-        {artifactsData.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setActiveTab(item.id)}
-            className={`font-serif text-sm px-5 py-2.5 rounded-sm transition-all duration-200 flex items-center gap-2 ${
-              activeTab === item.id
-                ? 'bg-ppg text-white shadow-sm font-semibold'
-                : 'bg-paper-warm text-ink-soft hover:bg-line-soft hover:text-ink'
+      {/* Form Upload */}
+      <section className="bg-paper-warm border border-line p-6 md:p-8 rounded-sm mb-12">
+        <h2 className="font-serif text-xl text-ink font-semibold mb-6 flex items-center gap-2">
+          <Upload className="text-ppg" size={22} /> Form Unggah Artefak Baru
+        </h2>
+
+        {message && (
+          <div
+            className={`p-4 rounded-sm mb-6 font-serif text-sm flex items-center gap-3 ${
+              message.type === 'success'
+                ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+                : 'bg-rose-50 border border-rose-200 text-rose-800'
             }`}
           >
-            <Sparkles size={16} />
-            {item.cycle}: {item.title}
-          </button>
-        ))}
-      </div>
-
-      {/* Detail Siklus Terpilih */}
-      <div className="space-y-12">
-        {/* Ringkasan Artefak */}
-        <div className="bg-paper-warm border border-line p-6 md:p-8 rounded-sm">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-            <span className="font-serif text-xs uppercase tracking-widest text-ppg font-semibold bg-white px-3 py-1 border border-line">
-              {currentArtifact.cycle} · {currentArtifact.subject}
-            </span>
+            {message.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+            {message.text}
           </div>
-          <h2 className="font-serif text-2xl text-ink font-semibold mb-3">
-            {currentArtifact.title}
-          </h2>
-          <p className="font-serif text-sm text-ink-muted italic mb-6">
-            Pendekatan Utama: {currentArtifact.approach}
-          </p>
+        )}
 
-          <div className="space-y-3 pt-2">
-            <p className="font-serif text-sm font-semibold text-ink flex items-center gap-2">
-              <BookOpen size={18} className="text-ppg" /> Produk Pembelajaran yang Dianalisis:
-            </p>
-            <ul className="space-y-2 pl-6 list-disc font-serif text-sm text-ink-soft">
-              {currentArtifact.products.map((prod, idx) => (
-                <li key={idx}>{prod}</li>
-              ))}
-            </ul>
+        <form onSubmit={handleUpload} className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className="block font-serif text-sm text-ink font-semibold mb-2">
+                Judul Artefak <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Contoh: Modul Ajar Siklus 1 - Lay-up Basket"
+                className="w-full px-4 py-2.5 border border-line rounded-sm bg-white font-serif text-sm focus:outline-none focus:border-ppg"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block font-serif text-sm text-ink font-semibold mb-2">
+                Kategori / Siklus
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-4 py-2.5 border border-line rounded-sm bg-white font-serif text-sm focus:outline-none focus:border-ppg"
+              >
+                {CATEGORIES.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-serif text-sm text-ink font-semibold mb-2">
+              Deskripsi Singkat (Opsional)
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Tambahkan catatan atau deskripsi ringkas tentang artefak ini..."
+              rows={3}
+              className="w-full px-4 py-2.5 border border-line rounded-sm bg-white font-serif text-sm focus:outline-none focus:border-ppg"
+            />
+          </div>
+
+          <div>
+            <label className="block font-serif text-sm text-ink font-semibold mb-2">
+              Pilih File Dokumen (PDF, Word, Gambar) <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="file"
+              onChange={handleFileChange}
+              accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+              className="w-full px-4 py-2 border border-line rounded-sm bg-white font-serif text-sm file:mr-4 file:py-1.5 file:px-4 file:rounded-sm file:border-0 file:text-xs file:font-semibold file:bg-ppg file:text-white hover:file:bg-ppg-dark"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={uploading}
+            className="inline-flex items-center gap-2 font-serif text-sm text-white bg-ppg px-6 py-3 rounded-sm hover:bg-ppg-dark transition-colors duration-200 disabled:opacity-50"
+          >
+            {uploading ? (
+              <>
+                <Loader2 size={18} className="animate-spin" /> Mengunggah...
+              </>
+            ) : (
+              <>
+                <Plus size={18} /> Unggah Artefak Sekarang
+              </>
+            )}
+          </button>
+        </form>
+      </section>
+
+      {/* Daftar Artefak */}
+      <section className="space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
+          <h2 className="font-serif text-2xl text-ink font-semibold flex items-center gap-2">
+            <FileText className="text-ppg" size={24} /> Daftar Artefak Terunggah
+          </h2>
+
+          {/* Filter Kategori */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedCategory('Semua')}
+              className={`font-serif text-xs px-3 py-1.5 rounded-sm transition-colors ${
+                selectedCategory === 'Semua' ? 'bg-ppg text-white' : 'bg-paper-warm text-ink-soft'
+              }`}
+            >
+              Semua
+            </button>
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`font-serif text-xs px-3 py-1.5 rounded-sm transition-colors ${
+                  selectedCategory === cat.id ? 'bg-ppg text-white' : 'bg-paper-warm text-ink-soft'
+                }`}
+              >
+                {cat.id}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Bagian 1: Analisis Artefak Pembelajaran */}
-        <section className="space-y-6">
-          <div className="flex items-center gap-3 border-b border-line-soft pb-3">
-            <Layers className="text-ppg" size={24} />
-            <h2 className="font-serif text-2xl text-ink font-semibold">
-              1. Analisis Artefak Pembelajaran
-            </h2>
+        {loading ? (
+          <div className="text-center py-12 font-serif text-ink-muted flex items-center justify-center gap-2">
+            <Loader2 size={20} className="animate-spin text-ppg" /> Memuat daftar artefak...
           </div>
-
+        ) : filteredArtifacts.length === 0 ? (
+          <div className="bg-paper-warm border border-line p-8 text-center rounded-sm">
+            <p className="font-serif text-body text-ink-muted">Belum ada artefak yang diunggah dalam kategori ini.</p>
+          </div>
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white border border-line p-6 rounded-sm space-y-3">
-              <h3 className="font-serif text-lg text-ink font-semibold flex items-center gap-2">
-                <Target size={18} className="text-ppg" /> Identifikasi Artefak
-              </h3>
-              <p className="font-serif text-sm text-ink-soft leading-relaxed">
-                {currentArtifact.identification}
-              </p>
-            </div>
+            {filteredArtifacts.map((item) => {
+              const fileUrl = getPublicUrl(item.storage_path);
+              return (
+                <div key={item.id} className="bg-white border border-line p-6 rounded-sm flex flex-col justify-between space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="font-serif text-xs font-semibold text-ppg bg-ppg/10 px-2.5 py-1 rounded-sm">
+                        {item.category}
+                      </span>
+                      <span className="font-serif text-xs text-ink-muted">
+                        {new Date(item.created_at).toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </span>
+                    </div>
 
-            <div className="bg-white border border-line p-6 rounded-sm space-y-3">
-              <h3 className="font-serif text-lg text-ink font-semibold flex items-center gap-2">
-                <CheckCircle2 size={18} className="text-ppg" /> Alasan Pemilihan Artefak
-              </h3>
-              <ul className="space-y-2 pl-5 list-disc font-serif text-sm text-ink-soft leading-relaxed">
-                {currentArtifact.reasons.map((reason, idx) => (
-                  <li key={idx}>{reason}</li>
-                ))}
-              </ul>
-            </div>
+                    <h3 className="font-serif text-lg text-ink font-semibold">{item.title}</h3>
+                    {item.description && (
+                      <p className="font-serif text-sm text-ink-soft mt-2 leading-relaxed">{item.description}</p>
+                    )}
+                    <p className="font-serif text-xs text-ink-muted mt-3 truncate">📄 {item.file_name}</p>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2 border-t border-line-soft">
+                    <a
+                      href={fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 font-serif text-xs text-ppg border border-ppg px-3 py-1.5 rounded-sm hover:bg-ppg hover:text-white transition-colors"
+                    >
+                      <Eye size={14} /> Lihat File
+                    </a>
+
+                    <a
+                      href={fileUrl}
+                      download={item.file_name}
+                      className="inline-flex items-center gap-1.5 font-serif text-xs text-ink-soft border border-line px-3 py-1.5 rounded-sm hover:bg-paper-warm transition-colors"
+                    >
+                      <Download size={14} /> Unduh
+                    </a>
+
+                    <button
+                      onClick={() => handleDelete(item.id, item.storage_path)}
+                      className="inline-flex items-center gap-1.5 font-serif text-xs text-rose-600 border border-rose-200 px-3 py-1.5 rounded-sm hover:bg-rose-50 transition-colors ml-auto"
+                    >
+                      <Trash2 size={14} /> Hapus
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </section>
-
-        {/* Bagian 2: Kaitan Praktis & Konsep Utama */}
-        <section className="space-y-6">
-          <div className="flex items-center gap-3 border-b border-line-soft pb-3">
-            <Award className="text-ppg" size={24} />
-            <h2 className="font-serif text-2xl text-ink font-semibold">
-              2. Kaitan Praktis & Pembelajaran Masa Depan
-            </h2>
-          </div>
-
-          <div className="bg-white border border-line p-6 md:p-8 rounded-sm space-y-6">
-            <div>
-              <h3 className="font-serif text-lg text-ink font-semibold mb-3">
-                Konsep Utama yang Dipelajari & Diadopsi
-              </h3>
-              <ul className="grid grid-cols-1 md:grid-cols-3 gap-4 font-serif text-sm">
-                {currentArtifact.keyConcepts.map((concept, idx) => (
-                  <li key={idx} className="bg-paper-warm border border-line-soft p-4 rounded-sm text-ink-soft">
-                    {concept}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <hr className="border-line-soft" />
-
-            <div>
-              <h3 className="font-serif text-lg text-ink font-semibold mb-2">
-                Relevansi & Refleksi Kaitan Praktis
-              </h3>
-              <p className="font-serif text-sm text-ink-soft leading-relaxed">
-                {currentArtifact.practicalConnection}
-              </p>
-            </div>
-
-            <hr className="border-line-soft" />
-
-            <div>
-              <h3 className="font-serif text-lg text-ink font-semibold mb-3">
-                Rencana Adaptasi & Perubahan di Masa Depan
-              </h3>
-              <ul className="space-y-2 pl-5 list-disc font-serif text-sm text-ink-soft leading-relaxed">
-                {currentArtifact.futurePlans.map((plan, idx) => (
-                  <li key={idx}>{plan}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </section>
-      </div>
+        )}
+      </section>
     </div>
   );
 }
