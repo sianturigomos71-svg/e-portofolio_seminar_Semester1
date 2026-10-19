@@ -1,5 +1,5 @@
 import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
-import { Lock, LogOut, Upload, Trash2, FileText, CheckCircle2, AlertCircle, Loader2, ShieldCheck, Eye, Download } from 'lucide-react';
+import { Lock, LogOut, Upload, Trash2, FileText, CheckCircle2, AlertCircle, Loader2, ShieldCheck, Eye, Download, Files } from 'lucide-react';
 import { supabase, REFLECTION_BUCKET } from '@/lib/supabase';
 
 export interface ArtifactItem {
@@ -12,11 +12,14 @@ export interface ArtifactItem {
   created_at: string;
 }
 
-const CATEGORIES = [
-  { id: 'Siklus 1', label: 'Siklus 1 - Bola Basket' },
-  { id: 'Siklus 2', label: 'Siklus 2 - Lompat Jauh' },
-  { id: 'Siklus 3', label: 'Siklus 3 - Senam Berirama' },
-  { id: 'Umum', label: 'Dokumen / Artefak Umum' },
+export const COURSES = [
+  { id: 'Filosofi Pendidikan Indonesia', label: 'Filosofi Pendidikan Indonesia' },
+  { id: 'Pemahaman Peserta Didik', label: 'Pemahaman tentang Peserta Didik & Pembelajarannya' },
+  { id: 'Prinsip Pengajaran & Asesmen I', label: 'Prinsip Pengajaran & Asesmen I' },
+  { id: 'Pembelajaran Berdiferensiasi', label: 'Pembelajaran Berdiferensiasi' },
+  { id: 'PPL I', label: 'PPL I' },
+  { id: 'Seminar PPG', label: 'Seminar Pendidikan Profesi Guru' },
+  { id: 'Mata Kuliah Lainnya', label: 'Mata Kuliah Lainnya / umum' },
 ];
 
 export default function Admin() {
@@ -33,10 +36,10 @@ export default function Admin() {
   const [uploading, setUploading] = useState<boolean>(false);
 
   // Upload Form State
-  const [title, setTitle] = useState<string>('');
-  const [category, setCategory] = useState<string>('Siklus 1');
+  const [category, setCategory] = useState<string>(COURSES[0].id);
+  const [baseTitle, setBaseTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
 
   // Notification Message
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -86,7 +89,7 @@ export default function Admin() {
             id: doc.id,
             title: doc.title,
             description: doc.description || '',
-            category: doc.course_id || 'Umum',
+            category: doc.course_id || 'Mata Kuliah Lainnya',
             file_name: doc.file_name,
             storage_path: doc.storage_path,
             created_at: doc.upload_date,
@@ -104,82 +107,120 @@ export default function Admin() {
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+    if (e.target.files) {
+      setFiles(Array.from(e.target.files));
     }
   };
 
   const handleUpload = async (e: FormEvent) => {
     e.preventDefault();
-    if (!file || !title.trim()) {
-      setMessage({ type: 'error', text: 'Harap isi judul dan pilih file terlebih dahulu.' });
+    if (files.length === 0) {
+      setMessage({ type: 'error', text: 'Pilih minimal satu file untuk diunggah.' });
       return;
     }
 
     setUploading(true);
     setMessage(null);
 
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-      const filePath = `artifacts/${fileName}`;
+    let successCount = 0;
+    let failCount = 0;
 
-      const { error: storageError } = await supabase.storage
-        .from(REFLECTION_BUCKET)
-        .upload(filePath, file);
+    for (let i = 0; i < files.length; i++) {
+      const selectedFile = files[i];
+      try {
+        const fileExt = selectedFile.name.split('.').pop();
+        const cleanFileName = selectedFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const uniqueStorageName = `${Date.now()}_${Math.random().toString(36).substring(2, 6)}_${cleanFileName}`;
+        const filePath = `artifacts/${uniqueStorageName}`;
 
-      if (storageError) throw storageError;
+        // 1. Upload ke Supabase Storage
+        const { error: storageError } = await supabase.storage
+          .from(REFLECTION_BUCKET)
+          .upload(filePath, selectedFile);
 
-      const newArtifact = {
-        title: title.trim(),
-        category,
-        description: description.trim(),
-        file_name: file.name,
-        storage_path: filePath,
-        created_at: new Date().toISOString(),
-      };
+        if (storageError) throw storageError;
 
-      const { error: dbError } = await (supabase as any).from('artifacts').insert([newArtifact]);
+        // Tentukan judul: jika diisi gunakan gabungan judul + nama file, jika kosong gunakan nama file
+        const artifactTitle = baseTitle.trim()
+          ? `${baseTitle.trim()} - ${selectedFile.name.replace(/\.[^/.]+$/, '')}`
+          : selectedFile.name.replace(/\.[^/.]+$/, '');
 
-      if (dbError) {
-        await (supabase as any).from('reflection_documents').insert([
-          {
-            course_id: category,
-            title: title.trim(),
-            description: description.trim(),
-            file_name: file.name,
-            storage_path: filePath,
-            upload_date: new Date().toISOString(),
-          },
-        ]);
+        const newArtifact = {
+          title: artifactTitle,
+          category,
+          description: description.trim(),
+          file_name: selectedFile.name,
+          storage_path: filePath,
+          created_at: new Date().toISOString(),
+        };
+
+        // 2. Simpan ke Database
+        const { error: dbError } = await (supabase as any).from('artifacts').insert([newArtifact]);
+
+        if (dbError) {
+          await (supabase as any).from('reflection_documents').insert([
+            {
+              course_id: category,
+              title: artifactTitle,
+              description: description.trim(),
+              file_name: selectedFile.name,
+              storage_path: filePath,
+              upload_date: new Date().toISOString(),
+            },
+          ]);
+        }
+
+        successCount++;
+      } catch (err) {
+        console.error(`Gagal unggah file ${selectedFile.name}:`, err);
+        failCount++;
       }
-
-      setMessage({ type: 'success', text: 'Artefak berhasil diunggah ke website!' });
-      setTitle('');
-      setDescription('');
-      setFile(null);
-      fetchArtifacts();
-    } catch (err: any) {
-      console.error('Error upload:', err);
-      setMessage({ type: 'error', text: `Gagal mengunggah file: ${err.message || 'Terjadi kesalahan'}` });
-    } finally {
-      setUploading(false);
     }
+
+    if (successCount > 0) {
+      setMessage({
+        type: 'success',
+        text: `Berhasil mengunggah ${successCount} file artefak!` + (failCount > 0 ? ` (${failCount} file gagal)` : ''),
+      });
+      setBaseTitle('');
+      setDescription('');
+      setFiles([]);
+      fetchArtifacts();
+    } else {
+      setMessage({ type: 'error', text: 'Gagal mengunggah file. Silakan coba lagi.' });
+    }
+
+    setUploading(false);
   };
 
   const handleDelete = async (id: string, storagePath: string) => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus artefak ini dari publik?')) return;
+    if (!window.confirm('Apakah Anda yakin ingin menghapus artefak ini?')) return;
 
     try {
-      await supabase.storage.from(REFLECTION_BUCKET).remove([storagePath]);
-      await (supabase as any).from('artifacts').delete().eq('id', id);
-      await (supabase as any).from('reflection_documents').delete().eq('id', id);
+      // 1. Hapus dari Supabase Storage jika path ada
+      if (storagePath) {
+        const { error: storageErr } = await supabase.storage
+          .from(REFLECTION_BUCKET)
+          .remove([storagePath]);
+
+        if (storageErr) {
+          console.warn('Storage delete info:', storageErr);
+        }
+      }
+
+      // 2. Hapus entri dari database
+      const { error: dbErr1 } = await (supabase as any).from('artifacts').delete().eq('id', id);
+      const { error: dbErr2 } = await (supabase as any).from('reflection_documents').delete().eq('id', id);
+
+      if (dbErr1 && dbErr2) {
+        throw dbErr1;
+      }
 
       setMessage({ type: 'success', text: 'Artefak berhasil dihapus.' });
-      fetchArtifacts();
-    } catch (err) {
+      setArtifacts((prev) => prev.filter((item) => item.id !== id));
+    } catch (err: any) {
       console.error('Error delete:', err);
-      setMessage({ type: 'error', text: 'Gagal menghapus file.' });
+      setMessage({ type: 'error', text: 'Gagal menghapus file dari database.' });
     }
   };
 
@@ -265,11 +306,14 @@ export default function Admin() {
 
       <hr className="border-line mb-10" />
 
-      {/* Form Upload Admin */}
+      {/* Form Upload Massal Admin */}
       <section className="bg-paper-warm border border-line p-6 md:p-8 rounded-sm mb-12">
-        <h2 className="font-serif text-xl text-ink font-semibold mb-6 flex items-center gap-2">
-          <Upload className="text-ppg" size={22} /> Unggah Artefak Baru
+        <h2 className="font-serif text-xl text-ink font-semibold mb-2 flex items-center gap-2">
+          <Upload className="text-ppg" size={22} /> Unggah Artefak (Sekaligus Banyak)
         </h2>
+        <p className="font-serif text-xs text-ink-soft mb-6">
+          Kamu bisa memilih beberapa file sekaligus (misal 6 file PDF) untuk satu mata kuliah.
+        </p>
 
         {message && (
           <div
@@ -288,33 +332,32 @@ export default function Admin() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <label className="block font-serif text-sm text-ink font-semibold mb-2">
-                Judul Artefak <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Contoh: Modul Ajar Siklus 1 - Lay-up Basket"
-                className="w-full px-4 py-2.5 border border-line rounded-sm bg-white font-serif text-sm focus:outline-none focus:border-ppg"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block font-serif text-sm text-ink font-semibold mb-2">
-                Kategori / Siklus
+                Pilih Mata Kuliah <span className="text-rose-500">*</span>
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full px-4 py-2.5 border border-line rounded-sm bg-white font-serif text-sm focus:outline-none focus:border-ppg"
               >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.label}
+                {COURSES.map((course) => (
+                  <option key={course.id} value={course.id}>
+                    {course.label}
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="block font-serif text-sm text-ink font-semibold mb-2">
+                Awalan Judul (Opsional)
+              </label>
+              <input
+                type="text"
+                value={baseTitle}
+                onChange={(e) => setBaseTitle(e.target.value)}
+                placeholder="Contoh: Modul & LKPD (Kosongkan jika pakai nama file)"
+                className="w-full px-4 py-2.5 border border-line rounded-sm bg-white font-serif text-sm focus:outline-none focus:border-ppg"
+              />
             </div>
           </div>
 
@@ -325,47 +368,53 @@ export default function Admin() {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Tambahkan catatan singkat..."
-              rows={3}
+              placeholder="Tambahkan deskripsi ringkas yang berlaku untuk file-file ini..."
+              rows={2}
               className="w-full px-4 py-2.5 border border-line rounded-sm bg-white font-serif text-sm focus:outline-none focus:border-ppg"
             />
           </div>
 
           <div>
             <label className="block font-serif text-sm text-ink font-semibold mb-2">
-              Pilih File Dokumen (PDF, Word, Gambar) <span className="text-rose-500">*</span>
+              Pilih File Dokumen (Bisa Pilih Banyak File Sekaligus) <span className="text-rose-500">*</span>
             </label>
             <input
               type="file"
+              multiple
               onChange={handleFileChange}
               accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
               className="w-full px-4 py-2 border border-line rounded-sm bg-white font-serif text-sm file:mr-4 file:py-1.5 file:px-4 file:rounded-sm file:border-0 file:text-xs file:font-semibold file:bg-ppg file:text-white hover:file:bg-ppg-dark"
               required
             />
+            {files.length > 0 && (
+              <p className="font-serif text-xs text-ppg font-semibold mt-2 flex items-center gap-1">
+                <Files size={14} /> {files.length} file dipilih dan siap diunggah.
+              </p>
+            )}
           </div>
 
           <button
             type="submit"
-            disabled={uploading}
+            disabled={uploading || files.length === 0}
             className="inline-flex items-center gap-2 font-serif text-sm text-white bg-ppg px-6 py-3 rounded-sm hover:bg-ppg-dark transition-colors duration-200 disabled:opacity-50"
           >
             {uploading ? (
               <>
-                <Loader2 size={18} className="animate-spin" /> Mengunggah...
+                <Loader2 size={18} className="animate-spin" /> Mengunggah {files.length} File...
               </>
             ) : (
               <>
-                <Upload size={18} /> Unggah Artefak Sekarang
+                <Upload size={18} /> Unggah {files.length > 0 ? `${files.length} File` : ''} Sekarang
               </>
             )}
           </button>
         </form>
       </section>
 
-      {/* Manajemen Hapus File */}
+      {/* Kelola / Hapus File */}
       <section className="space-y-6">
         <h2 className="font-serif text-xl text-ink font-semibold flex items-center gap-2 border-b border-line pb-3">
-          <FileText className="text-ppg" size={22} /> Kelola File Terunggah
+          <FileText className="text-ppg" size={22} /> Daftar Artefak Terunggah ({artifacts.length})
         </h2>
 
         {loading ? (
@@ -379,7 +428,7 @@ export default function Admin() {
               return (
                 <div key={item.id} className="bg-white border border-line p-5 rounded-sm flex flex-col justify-between space-y-3">
                   <div>
-                    <span className="font-serif text-xs font-semibold text-ppg bg-ppg/10 px-2 py-0.5 rounded-sm mb-2 inline-block">
+                    <span className="font-serif text-xs font-semibold text-ppg bg-ppg/10 px-2.5 py-0.5 rounded-sm mb-2 inline-block">
                       {item.category}
                     </span>
                     <h3 className="font-serif text-base text-ink font-semibold">{item.title}</h3>
