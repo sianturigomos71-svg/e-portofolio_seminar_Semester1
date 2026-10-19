@@ -1,21 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Ganti URL dengan Project URL proyek Supabase barumu (ada di Settings > API di Supabase)
+export const supabaseUrl = 'https://ID_PROYEK_BARU_KAMU.supabase.co';
+
+// Masukkan Publishable Key baru kamu di sini
+export const supabaseAnonKey = 'sb_publishable_NaRc5bl6IoaSbgbM-2lqsw_LpwEVDYE';
+
+export const REFLECTION_BUCKET = 'reflection_documents';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-export interface ReflectionDocument {
-  id: string;
-  course_id: string;
-  title: string;
-  description: string | null;
-  file_name: string;
-  file_size: number;
-  storage_path: string;
-  upload_date: string;
-  updated_at: string;
-}
-
-export const REFLECTION_BUCKET = 'reflection_pdfs';
-export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
