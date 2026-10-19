@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FileText, Download, Eye, Loader2, Sparkles } from 'lucide-react';
 import { supabase, REFLECTION_BUCKET } from '@/lib/supabase';
+import { COURSES } from './Admin';
 
 export interface ArtifactItem {
   id: string;
@@ -11,14 +12,6 @@ export interface ArtifactItem {
   storage_path: string;
   created_at: string;
 }
-
-const CATEGORIES = [
-  { id: 'Semua', label: 'Semua Artefak' },
-  { id: 'Siklus 1', label: 'Siklus 1 - Bola Basket' },
-  { id: 'Siklus 2', label: 'Siklus 2 - Lompat Jauh' },
-  { id: 'Siklus 3', label: 'Siklus 3 - Senam Berirama' },
-  { id: 'Umum', label: 'Umum' },
-];
 
 export default function Artifacts() {
   const [artifacts, setArtifacts] = useState<ArtifactItem[]>([]);
@@ -32,13 +25,13 @@ export default function Artifacts() {
   const fetchArtifacts = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('artifacts')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
-        const { data: refData } = await supabase
+        const { data: refData } = await (supabase as any)
           .from('reflection_documents')
           .select('*')
           .order('upload_date', { ascending: false });
@@ -48,7 +41,7 @@ export default function Artifacts() {
             id: doc.id,
             title: doc.title,
             description: doc.description || '',
-            category: doc.course_id || 'Umum',
+            category: doc.course_id || 'Mata Kuliah Lainnya',
             file_name: doc.file_name,
             storage_path: doc.storage_path,
             created_at: doc.upload_date,
@@ -56,7 +49,7 @@ export default function Artifacts() {
           setArtifacts(mapped);
         }
       } else if (data) {
-        setArtifacts(data);
+        setArtifacts(data as ArtifactItem[]);
       }
     } catch (err) {
       console.error('Gagal mengambil data artefak:', err);
@@ -86,25 +79,35 @@ export default function Artifacts() {
           Artefak Pembelajaran
         </h1>
         <p className="font-serif text-body text-ink-soft mt-4 max-w-prose leading-relaxed">
-          Kumpulan berkas dokumen pendukung, Modul Ajar, LKPD, dan hasil refleksi pembelajaran selama mengikuti program PPG Prajabatan.
+          Dokumentasi artefak hasil belajar, Modul Ajar, LKPD, serta perangkat pembelajaran untuk setiap Mata Kuliah PPG Prajabatan.
         </p>
         <hr className="border-line mt-8" />
       </div>
 
-      {/* Filter Kategori / Siklus */}
+      {/* Filter Mata Kuliah */}
       <div className="flex flex-wrap gap-2 mb-10 border-b border-line pb-4">
-        {CATEGORIES.map((cat) => (
+        <button
+          onClick={() => setSelectedCategory('Semua')}
+          className={`font-serif text-xs px-3.5 py-2 rounded-sm transition-all duration-200 flex items-center gap-1.5 ${
+            selectedCategory === 'Semua'
+              ? 'bg-ppg text-white shadow-sm font-semibold'
+              : 'bg-paper-warm text-ink-soft hover:bg-line-soft hover:text-ink'
+          }`}
+        >
+          <Sparkles size={14} /> Semua Mata Kuliah
+        </button>
+
+        {COURSES.map((course) => (
           <button
-            key={cat.id}
-            onClick={() => setSelectedCategory(cat.id)}
-            className={`font-serif text-sm px-4 py-2 rounded-sm transition-all duration-200 flex items-center gap-2 ${
-              selectedCategory === cat.id
+            key={course.id}
+            onClick={() => setSelectedCategory(course.id)}
+            className={`font-serif text-xs px-3.5 py-2 rounded-sm transition-all duration-200 flex items-center gap-1.5 ${
+              selectedCategory === course.id
                 ? 'bg-ppg text-white shadow-sm font-semibold'
                 : 'bg-paper-warm text-ink-soft hover:bg-line-soft hover:text-ink'
             }`}
           >
-            <Sparkles size={15} />
-            {cat.label}
+            {course.id}
           </button>
         ))}
       </div>
@@ -116,7 +119,7 @@ export default function Artifacts() {
         </div>
       ) : filteredArtifacts.length === 0 ? (
         <div className="bg-paper-warm border border-line p-10 text-center rounded-sm">
-          <p className="font-serif text-body text-ink-muted">Belum ada artefak yang diunggah dalam kategori ini.</p>
+          <p className="font-serif text-body text-ink-muted">Belum ada artefak yang diunggah untuk Mata Kuliah ini.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
