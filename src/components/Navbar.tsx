@@ -8,6 +8,7 @@ const navItems = [
   { label: 'Refleksi', path: '/refleksi' },
   { label: 'Dokumentasi', path: '/dokumentasi' },
   { label: 'Artefak', path: '/artefak' },
+  { label: 'Kelola', path: '/kelola' },
 ];
 
 export default function Navbar() {
