@@ -1,4 +1,3 @@
-```typescript
 import { useState, useEffect } from 'react';
 import { FileText, Download, Eye, Loader2, Sparkles } from 'lucide-react';
 import { supabase, REFLECTION_BUCKET } from '@/lib/supabase';
@@ -47,7 +46,7 @@ export default function Artifacts() {
           .order('upload_date', { ascending: false });
 
         if (refData) {
-          const mapped: ArtifactItem[] = refData.map((doc: Record<string, unknown>) => ({
+          const mapped: ArtifactItem[] = refData.map((doc: any) => ({
             id: String(doc.id || ''),
             title: String(doc.title || ''),
             description: String(doc.description || ''),
@@ -80,7 +79,6 @@ export default function Artifacts() {
 
   return (
     <div className="fade-in max-w-editorial mx-auto px-6 lg:px-10 py-16">
-      {/* Header Halaman */}
       <div className="mb-10">
         <p className="font-serif text-sm text-ppg tracking-widest uppercase mb-2">
           E-Portofolio · PPG Prajabatan PJOK
@@ -94,15 +92,15 @@ export default function Artifacts() {
         <hr className="border-line mt-8" />
       </div>
 
-      {/* Filter Mata Kuliah */}
       <div className="flex flex-wrap gap-2 mb-10 border-b border-line pb-4">
         <button
           onClick={() => setSelectedCategory('Semua')}
-          className={`font-serif text-xs px-3.5 py-2 rounded-sm transition-all duration-200 flex items-center gap-1.5 ${
-            selectedCategory === 'Semua'
+          className={
+            "font-serif text-xs px-3.5 py-2 rounded-sm transition-all duration-200 flex items-center gap-1.5 " +
+            (selectedCategory === 'Semua'
               ? 'bg-ppg text-white shadow-sm font-semibold'
-              : 'bg-paper-warm text-ink-soft hover:bg-line-soft hover:text-ink'
-          }`}
+              : 'bg-paper-warm text-ink-soft hover:bg-line-soft hover:text-ink')
+          }
         >
           <Sparkles size={14} /> Semua Mata Kuliah
         </button>
@@ -111,18 +109,18 @@ export default function Artifacts() {
           <button
             key={course.id}
             onClick={() => setSelectedCategory(course.id)}
-            className={`font-serif text-xs px-3.5 py-2 rounded-sm transition-all duration-200 flex items-center gap-1.5 ${
-              selectedCategory === course.id
+            className={
+              "font-serif text-xs px-3.5 py-2 rounded-sm transition-all duration-200 flex items-center gap-1.5 " +
+              (selectedCategory === course.id
                 ? 'bg-ppg text-white shadow-sm font-semibold'
-                : 'bg-paper-warm text-ink-soft hover:bg-line-soft hover:text-ink'
-            }`}
+                : 'bg-paper-warm text-ink-soft hover:bg-line-soft hover:text-ink')
+            }
           >
             {course.id}
           </button>
         ))}
       </div>
 
-      {/* Daftar Artefak */}
       {loading ? (
         <div className="text-center py-16 font-serif text-ink-muted flex items-center justify-center gap-2">
           <Loader2 size={22} className="animate-spin text-ppg" /> Memuat dokumen artefak...
@@ -155,9 +153,9 @@ export default function Artifacts() {
                     <FileText size={20} className="text-ppg shrink-0 mt-0.5" />
                     {item.title}
                   </h3>
-                  {item.description && (
+                  {item.description ? (
                     <p className="font-serif text-sm text-ink-soft mt-2 leading-relaxed">{item.description}</p>
-                  )}
+                  ) : null}
                   <p className="font-serif text-xs text-ink-muted mt-3 truncate">📄 {item.file_name}</p>
                 </div>
 
