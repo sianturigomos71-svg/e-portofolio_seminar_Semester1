@@ -1,7 +1,7 @@
+```typescript
 import { useState, useEffect } from 'react';
 import { FileText, Download, Eye, Loader2, Sparkles } from 'lucide-react';
 import { supabase, REFLECTION_BUCKET } from '@/lib/supabase';
-import { COURSES } from './Admin';
 
 export interface ArtifactItem {
   id: string;
@@ -12,6 +12,16 @@ export interface ArtifactItem {
   storage_path: string;
   created_at: string;
 }
+
+const COURSES = [
+  { id: 'Filosofi Pendidikan Indonesia', label: 'Filosofi Pendidikan Indonesia' },
+  { id: 'Pemahaman Peserta Didik', label: 'Pemahaman tentang Peserta Didik' },
+  { id: 'Prinsip Pengajaran & Asesmen I', label: 'Prinsip Pengajaran & Asesmen I' },
+  { id: 'Pembelajaran Berdiferensiasi', label: 'Pembelajaran Berdiferensiasi' },
+  { id: 'PPL I', label: 'PPL I' },
+  { id: 'Seminar PPG', label: 'Seminar Pendidikan Profesi Guru' },
+  { id: 'Mata Kuliah Lainnya', label: 'Mata Kuliah Lainnya / Umum' },
+];
 
 export default function Artifacts() {
   const [artifacts, setArtifacts] = useState<ArtifactItem[]>([]);
@@ -25,26 +35,26 @@ export default function Artifacts() {
   const fetchArtifacts = async () => {
     setLoading(true);
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('artifacts')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
-        const { data: refData } = await (supabase as any)
+        const { data: refData } = await supabase
           .from('reflection_documents')
           .select('*')
           .order('upload_date', { ascending: false });
 
         if (refData) {
-          const mapped = refData.map((doc: any) => ({
-            id: doc.id,
-            title: doc.title,
-            description: doc.description || '',
-            category: doc.course_id || 'Mata Kuliah Lainnya',
-            file_name: doc.file_name,
-            storage_path: doc.storage_path,
-            created_at: doc.upload_date,
+          const mapped: ArtifactItem[] = refData.map((doc: Record<string, unknown>) => ({
+            id: String(doc.id || ''),
+            title: String(doc.title || ''),
+            description: String(doc.description || ''),
+            category: String(doc.course_id || 'Mata Kuliah Lainnya'),
+            file_name: String(doc.file_name || ''),
+            storage_path: String(doc.storage_path || ''),
+            created_at: String(doc.upload_date || new Date().toISOString()),
           }));
           setArtifacts(mapped);
         }
