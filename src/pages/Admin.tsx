@@ -70,13 +70,13 @@ export default function Admin() {
   const fetchArtifacts = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('artifacts')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
-        const { data: refData } = await supabase
+        const { data: refData } = await (supabase as any)
           .from('reflection_documents')
           .select('*')
           .order('upload_date', { ascending: false });
@@ -94,7 +94,7 @@ export default function Admin() {
           setArtifacts(mapped);
         }
       } else if (data) {
-        setArtifacts(data);
+        setArtifacts(data as ArtifactItem[]);
       }
     } catch (err) {
       console.error('Gagal mengambil data:', err);
@@ -139,10 +139,10 @@ export default function Admin() {
         created_at: new Date().toISOString(),
       };
 
-      const { error: dbError } = await supabase.from('artifacts').insert([newArtifact]);
+      const { error: dbError } = await (supabase as any).from('artifacts').insert([newArtifact]);
 
       if (dbError) {
-        await supabase.from('reflection_documents').insert([
+        await (supabase as any).from('reflection_documents').insert([
           {
             course_id: category,
             title: title.trim(),
@@ -172,8 +172,8 @@ export default function Admin() {
 
     try {
       await supabase.storage.from(REFLECTION_BUCKET).remove([storagePath]);
-      await supabase.from('artifacts').delete().eq('id', id);
-      await supabase.from('reflection_documents').delete().eq('id', id);
+      await (supabase as any).from('artifacts').delete().eq('id', id);
+      await (supabase as any).from('reflection_documents').delete().eq('id', id);
 
       setMessage({ type: 'success', text: 'Artefak berhasil dihapus.' });
       fetchArtifacts();
