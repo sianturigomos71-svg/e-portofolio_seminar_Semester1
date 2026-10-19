@@ -1,424 +1,414 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { supabase, type ReflectionDocument, REFLECTION_BUCKET, MAX_FILE_SIZE } from '@/lib/supabase';
-import { courses } from '@/data/courses';
+import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
+import { Lock, LogOut, Upload, Trash2, FileText, CheckCircle2, AlertCircle, Loader2, ShieldCheck, Eye, Download } from 'lucide-react';
+import { supabase, REFLECTION_BUCKET } from '@/lib/supabase';
+
+export interface ArtifactItem {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  file_name: string;
+  storage_path: string;
+  created_at: string;
+}
+
+const CATEGORIES = [
+  { id: 'Siklus 1', label: 'Siklus 1 - Bola Basket' },
+  { id: 'Siklus 2', label: 'Siklus 2 - Lompat Jauh' },
+  { id: 'Siklus 3', label: 'Siklus 3 - Senam Berirama' },
+  { id: 'Umum', label: 'Dokumen / Artefak Umum' },
+];
 
 export default function Admin() {
-  const [authed, setAuthed] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [authError, setAuthError] = useState('');
-  const [authLoading, setAuthLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  const [documents, setDocuments] = useState<ReflectionDocument[]>([]);
-  const [loadingDocs, setLoadingDocs] = useState(true);
+  // Form Login State
+  const [loginEmail, setLoginEmail] = useState<string>('');
+  const [loginPassword, setLoginPassword] = useState<string>('');
+  const [loginError, setLoginError] = useState<string | null>(null);
 
-  // Upload form state
-  const [selectedCourse, setSelectedCourse] = useState('');
-  const [docTitle, setDocTitle] = useState('');
-  const [docDescription, setDocDescription] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState<
-    { type: 'success' | 'error'; message: string } | null
-  >(null);
+  // Management State
+  const [artifacts, setArtifacts] = useState<ArtifactItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [uploading, setUploading] = useState<boolean>(false);
 
-  const checkSession = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) setAuthed(true);
-  }, []);
+  // Upload Form State
+  const [title, setTitle] = useState<string>('');
+  const [category, setCategory] = useState<string>('Siklus 1');
+  const [description, setDescription] = useState<string>('');
+  const [file, setFile] = useState<File | null>(null);
+
+  // Notification Message
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
-    checkSession();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setAuthed(!!session);
-    });
-    return () => subscription.unsubscribe();
-  }, [checkSession]);
-
-  const fetchDocuments = useCallback(async () => {
-    setLoadingDocs(true);
-    const { data, error } = await supabase
-      .from('reflection_documents')
-      .select('*')
-      .order('course_id');
-    if (!error && data) {
-      setDocuments(data as ReflectionDocument[]);
+    const storedAuth = localStorage.getItem('admin_logged_in');
+    if (storedAuth === 'true') {
+      setIsAuthenticated(true);
+      fetchArtifacts();
     }
-    setLoadingDocs(false);
   }, []);
 
-  useEffect(() => {
-    if (authed) fetchDocuments();
-  }, [authed, fetchDocuments]);
-
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleLogin = (e: FormEvent) => {
     e.preventDefault();
-    setAuthError('');
-    setAuthLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setAuthError(error.message === 'Invalid login credentials'
-        ? 'Email atau kata sandi salah.'
-        : 'Gagal masuk. Silakan coba lagi.');
+    setLoginError(null);
+
+    if (loginEmail.trim() === 'gomossianturi71@gmail.com' && loginPassword === 'Sianturi71') {
+      setIsAuthenticated(true);
+      localStorage.setItem('admin_logged_in', 'true');
+      fetchArtifacts();
+    } else {
+      setLoginError('Email atau Kata Sandi salah. Akses ditolak!');
     }
-    setAuthLoading(false);
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    setEmail('');
-    setPassword('');
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem('admin_logged_in');
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) {
-      setSelectedFile(null);
-      return;
+  const fetchArtifacts = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('artifacts')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        const { data: refData } = await supabase
+          .from('reflection_documents')
+          .select('*')
+          .order('upload_date', { ascending: false });
+
+        if (refData) {
+          const mapped = refData.map((doc: any) => ({
+            id: doc.id,
+            title: doc.title,
+            description: doc.description || '',
+            category: doc.course_id || 'Umum',
+            file_name: doc.file_name,
+            storage_path: doc.storage_path,
+            created_at: doc.upload_date,
+          }));
+          setArtifacts(mapped);
+        }
+      } else if (data) {
+        setArtifacts(data);
+      }
+    } catch (err) {
+      console.error('Gagal mengambil data:', err);
+    } finally {
+      setLoading(false);
     }
-    if (file.type !== 'application/pdf') {
-      setUploadStatus({ type: 'error', message: 'Hanya file PDF yang diperbolehkan.' });
-      setSelectedFile(null);
-      return;
-    }
-    if (file.size > MAX_FILE_SIZE) {
-      setUploadStatus({
-        type: 'error',
-        message: `Ukuran file melebihi batas ${(MAX_FILE_SIZE / 1024 / 1024).toFixed(0)} MB.`,
-      });
-      setSelectedFile(null);
-      return;
-    }
-    setSelectedFile(file);
-    setUploadStatus(null);
   };
 
-  const handleUpload = async (e: React.FormEvent) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+    }
+  };
+
+  const handleUpload = async (e: FormEvent) => {
     e.preventDefault();
-    if (!selectedCourse || !docTitle || !selectedFile) {
-      setUploadStatus({ type: 'error', message: 'Pilih mata kuliah, isi judul, dan pilih file PDF.' });
+    if (!file || !title.trim()) {
+      setMessage({ type: 'error', text: 'Harap isi judul dan pilih file terlebih dahulu.' });
       return;
     }
 
     setUploading(true);
-    setUploadStatus(null);
+    setMessage(null);
 
     try {
-      const course = courses.find((c) => c.id === selectedCourse);
-      if (!course) throw new Error('Mata kuliah tidak ditemukan.');
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+      const filePath = `artifacts/${fileName}`;
 
-      const fileExt = selectedFile.name.split('.').pop() || 'pdf';
-      const storagePath = `${selectedCourse}/refleksi-${selectedCourse}.${fileExt}`;
-
-      // Check if a document already exists for this course
-      const { data: existing } = await supabase
-        .from('reflection_documents')
-        .select('*')
-        .eq('course_id', selectedCourse)
-        .maybeSingle();
-
-      // Upload file to storage (upsert)
-      const { error: uploadError } = await supabase.storage
+      const { error: storageError } = await supabase.storage
         .from(REFLECTION_BUCKET)
-        .upload(storagePath, selectedFile, { upsert: true });
+        .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (storageError) throw storageError;
 
-      if (existing) {
-        // Update existing record
-        const { error: updateError } = await supabase
-          .from('reflection_documents')
-          .update({
-            title: docTitle,
-            description: docDescription || null,
-            file_name: selectedFile.name,
-            file_size: selectedFile.size,
-            storage_path: storagePath,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('course_id', selectedCourse);
-        if (updateError) throw updateError;
-      } else {
-        // Insert new record
-        const { error: insertError } = await supabase
-          .from('reflection_documents')
-          .insert({
-            course_id: selectedCourse,
-            title: docTitle,
-            description: docDescription || null,
-            file_name: selectedFile.name,
-            file_size: selectedFile.size,
-            storage_path: storagePath,
-          });
-        if (insertError) throw insertError;
+      const newArtifact = {
+        title: title.trim(),
+        category,
+        description: description.trim(),
+        file_name: file.name,
+        storage_path: filePath,
+        created_at: new Date().toISOString(),
+      };
+
+      const { error: dbError } = await supabase.from('artifacts').insert([newArtifact]);
+
+      if (dbError) {
+        await supabase.from('reflection_documents').insert([
+          {
+            course_id: category,
+            title: title.trim(),
+            description: description.trim(),
+            file_name: file.name,
+            storage_path: filePath,
+            upload_date: new Date().toISOString(),
+          },
+        ]);
       }
 
-      setUploadStatus({ type: 'success', message: 'Refleksi berhasil disimpan.' });
-      setSelectedCourse('');
-      setDocTitle('');
-      setDocDescription('');
-      setSelectedFile(null);
-      fetchDocuments();
-    } catch {
-      setUploadStatus({
-        type: 'error',
-        message: 'Upload gagal. Dokumen belum berhasil disimpan. Silakan periksa ukuran file dan koneksi kemudian coba kembali.',
-      });
+      setMessage({ type: 'success', text: 'Artefak berhasil diunggah ke website!' });
+      setTitle('');
+      setDescription('');
+      setFile(null);
+      fetchArtifacts();
+    } catch (err: any) {
+      console.error('Error upload:', err);
+      setMessage({ type: 'error', text: `Gagal mengunggah file: ${err.message || 'Terjadi kesalahan'}` });
     } finally {
       setUploading(false);
     }
   };
 
-  const handleDelete = async (doc: ReflectionDocument) => {
-    if (!confirm(`Hapus refleksi "${doc.title}"?`)) return;
+  const handleDelete = async (id: string, storagePath: string) => {
+    if (!window.confirm('Apakah Anda yakin ingin menghapus artefak ini dari publik?')) return;
 
     try {
-      // Delete file from storage
-      const { error: storageError } = await supabase.storage
-        .from(REFLECTION_BUCKET)
-        .remove([doc.storage_path]);
-      if (storageError) throw storageError;
+      await supabase.storage.from(REFLECTION_BUCKET).remove([storagePath]);
+      await supabase.from('artifacts').delete().eq('id', id);
+      await supabase.from('reflection_documents').delete().eq('id', id);
 
-      // Delete record
-      const { error: dbError } = await supabase
-        .from('reflection_documents')
-        .delete()
-        .eq('id', doc.id);
-      if (dbError) throw dbError;
-
-      fetchDocuments();
-    } catch {
-      alert('Gagal menghapus dokumen. Silakan coba lagi.');
+      setMessage({ type: 'success', text: 'Artefak berhasil dihapus.' });
+      fetchArtifacts();
+    } catch (err) {
+      console.error('Error delete:', err);
+      setMessage({ type: 'error', text: 'Gagal menghapus file.' });
     }
   };
 
-  // ===== Login screen =====
-  if (!authed) {
-    return (
-      <div className="fade-in max-w-editorial mx-auto px-6 lg:px-10 py-16">
-        <div className="max-w-md mx-auto">
-          <p className="font-serif text-sm text-ppg tracking-widest uppercase mb-3">
-            Kelola Refleksi
-          </p>
-          <h1 className="font-serif text-3xl text-ink font-semibold tracking-tight mb-8">
-            Masuk
-          </h1>
+  const getPublicUrl = (storagePath: string) => {
+    const { data } = supabase.storage.from(REFLECTION_BUCKET).getPublicUrl(storagePath);
+    return data.publicUrl;
+  };
 
-          {authError && (
-            <p className="font-serif text-sm text-red-700 bg-red-50 border border-red-200 px-4 py-3 mb-6">
-              {authError}
+  if (!isAuthenticated) {
+    return (
+      <div className="fade-in max-w-md mx-auto px-6 py-20">
+        <div className="bg-paper-warm border border-line p-8 rounded-sm shadow-sm">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-ppg/10 text-ppg rounded-full mb-3">
+              <Lock size={24} />
+            </div>
+            <h1 className="font-serif text-2xl text-ink font-semibold">Login Kelola Web</h1>
+            <p className="font-serif text-sm text-ink-soft mt-1">
+              Khusus Admin untuk mengunggah & mengelola artefak
             </p>
+          </div>
+
+          {loginError && (
+            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 font-serif text-xs rounded-sm mb-4 flex items-center gap-2">
+              <AlertCircle size={16} /> {loginError}
+            </div>
           )}
 
-          <form onSubmit={handleSignIn} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block font-serif text-sm text-ink-soft mb-1">
-                Email
-              </label>
+              <label className="block font-serif text-xs font-semibold text-ink mb-1">Email</label>
               <input
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="gomossianturi71@gmail.com"
+                className="w-full px-3.5 py-2 border border-line rounded-sm bg-white font-serif text-sm focus:outline-none focus:border-ppg"
                 required
-                className="w-full font-serif text-body border border-line bg-paper-card px-4 py-2 focus:outline-none focus:border-ppg transition-colors duration-200"
               />
             </div>
+
             <div>
-              <label className="block font-serif text-sm text-ink-soft mb-1">
-                Kata Sandi
-              </label>
+              <label className="block font-serif text-xs font-semibold text-ink mb-1">Kata Sandi</label>
               <input
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full px-3.5 py-2 border border-line rounded-sm bg-white font-serif text-sm focus:outline-none focus:border-ppg"
                 required
-                className="w-full font-serif text-body border border-line bg-paper-card px-4 py-2 focus:outline-none focus:border-ppg transition-colors duration-200"
               />
             </div>
+
             <button
               type="submit"
-              disabled={authLoading}
-              className="font-serif text-[15px] text-white bg-ppg px-6 py-3 hover:bg-ppg-dark transition-colors duration-200 disabled:opacity-50"
+              className="w-full font-serif text-sm text-white bg-ppg py-2.5 rounded-sm hover:bg-ppg-dark transition-colors duration-200 mt-2 font-semibold"
             >
-              {authLoading ? 'Memproses...' : 'Masuk'}
+              Masuk
             </button>
           </form>
-
-          <div className="mt-8 pt-6 border-t border-line-soft">
-            <Link
-              to="/"
-              className="font-serif text-sm text-ppg hover:text-ppg-dark transition-colors duration-200 link-underline"
-            >
-              ← Kembali ke Beranda
-            </Link>
-          </div>
         </div>
       </div>
     );
   }
 
-  // ===== Admin dashboard =====
   return (
     <div className="fade-in max-w-editorial mx-auto px-6 lg:px-10 py-16">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-12">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div>
-          <p className="font-serif text-sm text-ppg tracking-widest uppercase mb-2">
-            Kelola Refleksi
-          </p>
-          <h1 className="font-serif text-3xl text-ink font-semibold tracking-tight">
-            Kelola Refleksi
-          </h1>
+          <span className="font-serif text-xs text-ppg font-semibold bg-ppg/10 px-3 py-1 rounded-sm inline-flex items-center gap-1 mb-2">
+            <ShieldCheck size={14} /> Terautentikasi: gomossianturi71@gmail.com
+          </span>
+          <h1 className="font-serif text-3xl text-ink font-semibold">Panel Kelola Artefak</h1>
         </div>
+
         <button
-          onClick={handleSignOut}
-          className="font-serif text-sm text-ink-muted hover:text-ppg transition-colors duration-200 link-underline w-fit"
+          onClick={handleLogout}
+          className="inline-flex items-center gap-2 font-serif text-xs text-rose-700 border border-rose-300 px-4 py-2 rounded-sm hover:bg-rose-50 transition-colors"
         >
-          Keluar
+          <LogOut size={16} /> Keluar (Logout)
         </button>
       </div>
 
-      {/* Upload form */}
-      <div className="mb-16">
-        <h2 className="font-serif text-xl text-ink font-semibold mb-6">
-          Tambah / Ganti Refleksi
+      <hr className="border-line mb-10" />
+
+      {/* Form Upload Admin */}
+      <section className="bg-paper-warm border border-line p-6 md:p-8 rounded-sm mb-12">
+        <h2 className="font-serif text-xl text-ink font-semibold mb-6 flex items-center gap-2">
+          <Upload className="text-ppg" size={22} /> Unggah Artefak Baru
         </h2>
 
-        {uploadStatus && (
-          <p
-            className={`font-serif text-sm px-4 py-3 mb-6 ${
-              uploadStatus.type === 'success'
-                ? 'text-green-800 bg-green-50 border border-green-200'
-                : 'text-red-700 bg-red-50 border border-red-200'
+        {message && (
+          <div
+            className={`p-4 rounded-sm mb-6 font-serif text-sm flex items-center gap-3 ${
+              message.type === 'success'
+                ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+                : 'bg-rose-50 border border-rose-200 text-rose-800'
             }`}
           >
-            {uploadStatus.message}
-          </p>
+            {message.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+            {message.text}
+          </div>
         )}
 
-        <form onSubmit={handleUpload} className="max-w-prose space-y-5">
-          <div>
-            <label className="block font-serif text-sm text-ink-soft mb-1">
-              Mata Kuliah
-            </label>
-            <select
-              value={selectedCourse}
-              onChange={(e) => setSelectedCourse(e.target.value)}
-              required
-              className="w-full font-serif text-body border border-line bg-paper-card px-4 py-2 focus:outline-none focus:border-ppg transition-colors duration-200"
-            >
-              <option value="">— Pilih mata kuliah —</option>
-              {courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.number} — {c.title}
-                </option>
-              ))}
-            </select>
+        <form onSubmit={handleUpload} className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className="block font-serif text-sm text-ink font-semibold mb-2">
+                Judul Artefak <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Contoh: Modul Ajar Siklus 1 - Lay-up Basket"
+                className="w-full px-4 py-2.5 border border-line rounded-sm bg-white font-serif text-sm focus:outline-none focus:border-ppg"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block font-serif text-sm text-ink font-semibold mb-2">
+                Kategori / Siklus
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-4 py-2.5 border border-line rounded-sm bg-white font-serif text-sm focus:outline-none focus:border-ppg"
+              >
+                {CATEGORIES.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div>
-            <label className="block font-serif text-sm text-ink-soft mb-1">
-              Judul Dokumen
-            </label>
-            <input
-              type="text"
-              value={docTitle}
-              onChange={(e) => setDocTitle(e.target.value)}
-              required
-              placeholder="Refleksi Mata Kuliah..."
-              className="w-full font-serif text-body border border-line bg-paper-card px-4 py-2 focus:outline-none focus:border-ppg transition-colors duration-200"
-            />
-          </div>
-
-          <div>
-            <label className="block font-serif text-sm text-ink-soft mb-1">
-              Deskripsi (opsional)
+            <label className="block font-serif text-sm text-ink font-semibold mb-2">
+              Deskripsi Singkat (Opsional)
             </label>
             <textarea
-              value={docDescription}
-              onChange={(e) => setDocDescription(e.target.value)}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Tambahkan catatan singkat..."
               rows={3}
-              className="w-full font-serif text-body border border-line bg-paper-card px-4 py-2 focus:outline-none focus:border-ppg transition-colors duration-200 resize-none"
+              className="w-full px-4 py-2.5 border border-line rounded-sm bg-white font-serif text-sm focus:outline-none focus:border-ppg"
             />
           </div>
 
           <div>
-            <label className="block font-serif text-sm text-ink-soft mb-1">
-              File PDF
+            <label className="block font-serif text-sm text-ink font-semibold mb-2">
+              Pilih File Dokumen (PDF, Word, Gambar) <span className="text-rose-500">*</span>
             </label>
             <input
               type="file"
-              accept="application/pdf"
               onChange={handleFileChange}
+              accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+              className="w-full px-4 py-2 border border-line rounded-sm bg-white font-serif text-sm file:mr-4 file:py-1.5 file:px-4 file:rounded-sm file:border-0 file:text-xs file:font-semibold file:bg-ppg file:text-white hover:file:bg-ppg-dark"
               required
-              className="w-full font-serif text-body text-ink-soft file:mr-4 file:font-serif file:text-sm file:text-white file:bg-ppg file:border-0 file:px-4 file:py-2 file:cursor-pointer"
             />
-            {selectedFile && (
-              <p className="font-serif text-sm text-ink-muted mt-2">
-                {selectedFile.name} — {(selectedFile.size / 1024).toFixed(0)} KB
-              </p>
-            )}
-            <p className="font-serif text-xs text-ink-muted mt-2">
-              Batas ukuran: {(MAX_FILE_SIZE / 1024 / 1024).toFixed(0)} MB. Hanya PDF.
-            </p>
           </div>
 
           <button
             type="submit"
             disabled={uploading}
-            className="font-serif text-[15px] text-white bg-ppg px-6 py-3 hover:bg-ppg-dark transition-colors duration-200 disabled:opacity-50"
+            className="inline-flex items-center gap-2 font-serif text-sm text-white bg-ppg px-6 py-3 rounded-sm hover:bg-ppg-dark transition-colors duration-200 disabled:opacity-50"
           >
-            {uploading ? 'Menyimpan...' : 'Simpan Refleksi'}
+            {uploading ? (
+              <>
+                <Loader2 size={18} className="animate-spin" /> Mengunggah...
+              </>
+            ) : (
+              <>
+                <Upload size={18} /> Unggah Artefak Sekarang
+              </>
+            )}
           </button>
         </form>
-      </div>
+      </section>
 
-      {/* Existing documents */}
-      <div>
-        <h2 className="font-serif text-xl text-ink font-semibold mb-6">
-          Refleksi Tersimpan
+      {/* Manajemen Hapus File */}
+      <section className="space-y-6">
+        <h2 className="font-serif text-xl text-ink font-semibold flex items-center gap-2 border-b border-line pb-3">
+          <FileText className="text-ppg" size={22} /> Kelola File Terunggah
         </h2>
 
-        {loadingDocs ? (
-          <p className="font-serif text-body text-ink-muted">Memuat...</p>
-        ) : documents.length === 0 ? (
-          <p className="font-serif text-body text-ink-muted">
-            Belum ada refleksi yang ditambahkan.
-          </p>
+        {loading ? (
+          <div className="text-center py-10 font-serif text-ink-muted">Memuat data...</div>
+        ) : artifacts.length === 0 ? (
+          <p className="font-serif text-sm text-ink-muted">Belum ada file yang diunggah.</p>
         ) : (
-          <div>
-            {documents.map((doc, i) => {
-              const course = courses.find((c) => c.id === doc.course_id);
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {artifacts.map((item) => {
+              const fileUrl = getPublicUrl(item.storage_path);
               return (
-                <div key={doc.id}>
-                  {i > 0 && <hr className="border-line-soft" />}
-                  <div className="py-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                    <div>
-                      <p className="font-serif text-sm text-ppg tracking-wide">
-                        {course?.number} — {course?.title}
-                      </p>
-                      <p className="font-serif text-lg text-ink font-semibold mt-1">
-                        {doc.title}
-                      </p>
-                      {doc.description && (
-                        <p className="font-serif text-sm text-ink-soft mt-1 max-w-prose">
-                          {doc.description}
-                        </p>
-                      )}
-                      <p className="font-serif text-sm text-ink-muted mt-2">
-                        {doc.file_name} — {(doc.file_size / 1024).toFixed(0)} KB ·{' '}
-                        {new Date(doc.upload_date).toLocaleDateString('id-ID', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleDelete(doc)}
-                      className="font-serif text-sm text-red-700 hover:text-red-900 transition-colors duration-200 link-underline whitespace-nowrap"
+                <div key={item.id} className="bg-white border border-line p-5 rounded-sm flex flex-col justify-between space-y-3">
+                  <div>
+                    <span className="font-serif text-xs font-semibold text-ppg bg-ppg/10 px-2 py-0.5 rounded-sm mb-2 inline-block">
+                      {item.category}
+                    </span>
+                    <h3 className="font-serif text-base text-ink font-semibold">{item.title}</h3>
+                    <p className="font-serif text-xs text-ink-muted truncate mt-1">📄 {item.file_name}</p>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2 border-t border-line-soft">
+                    <a
+                      href={fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 font-serif text-xs text-ppg border border-ppg px-3 py-1 rounded-sm hover:bg-ppg hover:text-white transition-colors"
                     >
-                      Hapus
+                      <Eye size={13} /> Lihat
+                    </a>
+
+                    <a
+                      href={fileUrl}
+                      download={item.file_name}
+                      className="inline-flex items-center gap-1 font-serif text-xs text-ink-soft border border-line px-3 py-1 rounded-sm hover:bg-paper-warm transition-colors"
+                    >
+                      <Download size={13} /> Unduh
+                    </a>
+
+                    <button
+                      onClick={() => handleDelete(item.id, item.storage_path)}
+                      className="inline-flex items-center gap-1 font-serif text-xs text-rose-600 border border-rose-200 px-3 py-1 rounded-sm hover:bg-rose-50 transition-colors ml-auto"
+                    >
+                      <Trash2 size={13} /> Hapus
                     </button>
                   </div>
                 </div>
@@ -426,7 +416,7 @@ export default function Admin() {
             })}
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }
