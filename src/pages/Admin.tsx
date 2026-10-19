@@ -70,30 +70,23 @@ export default function Admin() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('artifacts')
+        .from('reflection_documents')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('upload_date', { ascending: false });
 
       if (error) {
-        const { data: refData } = await supabase
-          .from('reflection_documents')
-          .select('*')
-          .order('upload_date', { ascending: false });
-
-        if (refData) {
-          const mapped: ArtifactItem[] = refData.map((doc: any) => ({
-            id: String(doc.id || ''),
-            title: String(doc.title || ''),
-            description: String(doc.description || ''),
-            category: String(doc.course_id || 'Mata Kuliah Lainnya'),
-            file_name: String(doc.file_name || ''),
-            storage_path: String(doc.storage_path || ''),
-            created_at: String(doc.upload_date || new Date().toISOString()),
-          }));
-          setArtifacts(mapped);
-        }
+        console.error('Error fetching reflection_documents:', error);
       } else if (data) {
-        setArtifacts(data as ArtifactItem[]);
+        const mapped: ArtifactItem[] = data.map((doc: any) => ({
+          id: String(doc.id || ''),
+          title: String(doc.title || ''),
+          description: String(doc.description || ''),
+          category: String(doc.course_id || 'Mata Kuliah Lainnya'),
+          file_name: String(doc.file_name || ''),
+          storage_path: String(doc.storage_path || ''),
+          created_at: String(doc.upload_date || new Date().toISOString()),
+        }));
+        setArtifacts(mapped);
       }
     } catch (err) {
       console.error('Gagal mengambil data:', err);
@@ -138,29 +131,18 @@ export default function Admin() {
           ? baseTitle.trim() + ' - ' + selectedFile.name.replace(/\.[^/.]+$/, '')
           : selectedFile.name.replace(/\.[^/.]+$/, '');
 
-        const newArtifact = {
-          title: artifactTitle,
-          category,
-          description: description.trim(),
-          file_name: selectedFile.name,
-          storage_path: filePath,
-          created_at: new Date().toISOString(),
-        };
+        const { error: dbError } = await supabase.from('reflection_documents').insert([
+          {
+            course_id: category,
+            title: artifactTitle,
+            description: description.trim(),
+            file_name: selectedFile.name,
+            storage_path: filePath,
+            upload_date: new Date().toISOString(),
+          },
+        ]);
 
-        const { error: dbError } = await supabase.from('artifacts').insert([newArtifact]);
-
-        if (dbError) {
-          await supabase.from('reflection_documents').insert([
-            {
-              course_id: category,
-              title: artifactTitle,
-              description: description.trim(),
-              file_name: selectedFile.name,
-              storage_path: filePath,
-              upload_date: new Date().toISOString(),
-            },
-          ]);
-        }
+        if (dbError) throw dbError;
 
         successCount++;
       } catch (err) {
@@ -193,8 +175,9 @@ export default function Admin() {
         await supabase.storage.from(REFLECTION_BUCKET).remove([storagePath]);
       }
 
-      await supabase.from('artifacts').delete().eq('id', id);
-      await supabase.from('reflection_documents').delete().eq('id', id);
+      const { error: dbErr } = await supabase.from('reflection_documents').delete().eq('id', id);
+
+      if (dbErr) throw dbErr;
 
       setMessage({ type: 'success', text: 'Artefak berhasil dihapus.' });
       setArtifacts((prev) => prev.filter((item) => item.id !== id));
@@ -225,7 +208,8 @@ export default function Admin() {
 
           {loginError ? (
             <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 font-serif text-xs rounded-sm mb-4 flex items-center gap-2">
-              <AlertCircle size={16} /> {loginError}
+              <AlertCircle size={16} />
+              <span>{loginError}</span>
             </div>
           ) : null}
 
@@ -258,7 +242,7 @@ export default function Admin() {
               type="submit"
               className="w-full font-serif text-sm text-white bg-ppg py-2.5 rounded-sm hover:bg-ppg-dark transition-colors duration-200 mt-2 font-semibold"
             >
-              Masuk
+              <span>Masuk</span>
             </button>
           </form>
         </div>
@@ -271,7 +255,8 @@ export default function Admin() {
       <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div>
           <span className="font-serif text-xs text-ppg font-semibold bg-ppg/10 px-3 py-1 rounded-sm inline-flex items-center gap-1 mb-2">
-            <ShieldCheck size={14} /> Terautentikasi: gomossianturi71@gmail.com
+            <ShieldCheck size={14} />
+            <span>Terautentikasi: gomossianturi71@gmail.com</span>
           </span>
           <h1 className="font-serif text-3xl text-ink font-semibold">Panel Kelola Artefak</h1>
         </div>
@@ -280,7 +265,8 @@ export default function Admin() {
           onClick={handleLogout}
           className="inline-flex items-center gap-2 font-serif text-xs text-rose-700 border border-rose-300 px-4 py-2 rounded-sm hover:bg-rose-50 transition-colors"
         >
-          <LogOut size={16} /> Keluar (Logout)
+          <LogOut size={16} />
+          <span>Keluar (Logout)</span>
         </button>
       </div>
 
@@ -288,7 +274,8 @@ export default function Admin() {
 
       <section className="bg-paper-warm border border-line p-6 md:p-8 rounded-sm mb-12">
         <h2 className="font-serif text-xl text-ink font-semibold mb-2 flex items-center gap-2">
-          <Upload className="text-ppg" size={22} /> Unggah Artefak (Sekaligus Banyak)
+          <Upload className="text-ppg" size={22} />
+          <span>Unggah Artefak (Sekaligus Banyak)</span>
         </h2>
         <p className="font-serif text-xs text-ink-soft mb-6">
           Kamu bisa memilih beberapa file sekaligus (misal 6 file PDF) untuk satu mata kuliah.
@@ -297,14 +284,14 @@ export default function Admin() {
         {message ? (
           <div
             className={
-              "p-4 rounded-sm mb-6 font-serif text-sm flex items-center gap-3 " +
+              'p-4 rounded-sm mb-6 font-serif text-sm flex items-center gap-3 ' +
               (message.type === 'success'
                 ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
                 : 'bg-rose-50 border border-rose-200 text-rose-800')
             }
           >
             {message.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
-            {message.text}
+            <span>{message.text}</span>
           </div>
         ) : null}
 
@@ -368,7 +355,8 @@ export default function Admin() {
             />
             {files.length > 0 ? (
               <p className="font-serif text-xs text-ppg font-semibold mt-2 flex items-center gap-1">
-                <Files size={14} /> {files.length} file dipilih dan siap diunggah.
+                <Files size={14} />
+                <span>{files.length} file dipilih dan siap diunggah.</span>
               </p>
             ) : null}
           </div>
@@ -380,11 +368,13 @@ export default function Admin() {
           >
             {uploading ? (
               <>
-                <Loader2 size={18} className="animate-spin" /> Mengunggah {files.length} File...
+                <Loader2 size={18} className="animate-spin" />
+                <span>Mengunggah {files.length} File...</span>
               </>
             ) : (
               <>
-                <Upload size={18} /> Unggah {files.length > 0 ? files.length + ' File' : ''} Sekarang
+                <Upload size={18} />
+                <span>Unggah {files.length > 0 ? files.length + ' File' : ''} Sekarang</span>
               </>
             )}
           </button>
@@ -393,7 +383,8 @@ export default function Admin() {
 
       <section className="space-y-6">
         <h2 className="font-serif text-xl text-ink font-semibold flex items-center gap-2 border-b border-line pb-3">
-          <FileText className="text-ppg" size={22} /> Daftar Artefak Terunggah ({artifacts.length})
+          <FileText className="text-ppg" size={22} />
+          <span>Daftar Artefak Terunggah ({artifacts.length})</span>
         </h2>
 
         {loading ? (
@@ -421,7 +412,8 @@ export default function Admin() {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 font-serif text-xs text-ppg border border-ppg px-3 py-1 rounded-sm hover:bg-ppg hover:text-white transition-colors"
                     >
-                      <Eye size={13} /> Lihat
+                      <Eye size={13} />
+                      <span>Lihat</span>
                     </a>
 
                     <a
@@ -429,14 +421,16 @@ export default function Admin() {
                       download={item.file_name}
                       className="inline-flex items-center gap-1 font-serif text-xs text-ink-soft border border-line px-3 py-1 rounded-sm hover:bg-paper-warm transition-colors"
                     >
-                      <Download size={13} /> Unduh
+                      <Download size={13} />
+                      <span>Unduh</span>
                     </a>
 
                     <button
                       onClick={() => handleDelete(item.id, item.storage_path)}
                       className="inline-flex items-center gap-1 font-serif text-xs text-rose-600 border border-rose-200 px-3 py-1 rounded-sm hover:bg-rose-50 transition-colors ml-auto"
                     >
-                      <Trash2 size={13} /> Hapus
+                      <Trash2 size={13} />
+                      <span>Hapus</span>
                     </button>
                   </div>
                 </div>
