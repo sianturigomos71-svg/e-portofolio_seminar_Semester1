@@ -12,36 +12,32 @@ export interface ArtifactItem {
   created_at: string;
 }
 
-export const COURSES = [
+const COURSES = [
   { id: 'Filosofi Pendidikan Indonesia', label: 'Filosofi Pendidikan Indonesia' },
   { id: 'Pemahaman Peserta Didik', label: 'Pemahaman tentang Peserta Didik & Pembelajarannya' },
   { id: 'Prinsip Pengajaran & Asesmen I', label: 'Prinsip Pengajaran & Asesmen I' },
   { id: 'Pembelajaran Berdiferensiasi', label: 'Pembelajaran Berdiferensiasi' },
   { id: 'PPL I', label: 'PPL I' },
   { id: 'Seminar PPG', label: 'Seminar Pendidikan Profesi Guru' },
-  { id: 'Mata Kuliah Lainnya', label: 'Mata Kuliah Lainnya / umum' },
+  { id: 'Mata Kuliah Lainnya', label: 'Mata Kuliah Lainnya / Umum' },
 ];
 
 export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  // Form Login State
   const [loginEmail, setLoginEmail] = useState<string>('');
   const [loginPassword, setLoginPassword] = useState<string>('');
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  // Management State
   const [artifacts, setArtifacts] = useState<ArtifactItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [uploading, setUploading] = useState<boolean>(false);
 
-  // Upload Form State
   const [category, setCategory] = useState<string>(COURSES[0].id);
   const [baseTitle, setBaseTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [files, setFiles] = useState<File[]>([]);
 
-  // Notification Message
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
@@ -73,26 +69,26 @@ export default function Admin() {
   const fetchArtifacts = async () => {
     setLoading(true);
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('artifacts')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
-        const { data: refData } = await (supabase as any)
+        const { data: refData } = await supabase
           .from('reflection_documents')
           .select('*')
           .order('upload_date', { ascending: false });
 
         if (refData) {
-          const mapped = refData.map((doc: any) => ({
-            id: doc.id,
-            title: doc.title,
-            description: doc.description || '',
-            category: doc.course_id || 'Mata Kuliah Lainnya',
-            file_name: doc.file_name,
-            storage_path: doc.storage_path,
-            created_at: doc.upload_date,
+          const mapped: ArtifactItem[] = refData.map((doc: any) => ({
+            id: String(doc.id || ''),
+            title: String(doc.title || ''),
+            description: String(doc.description || ''),
+            category: String(doc.course_id || 'Mata Kuliah Lainnya'),
+            file_name: String(doc.file_name || ''),
+            storage_path: String(doc.storage_path || ''),
+            created_at: String(doc.upload_date || new Date().toISOString()),
           }));
           setArtifacts(mapped);
         }
@@ -128,21 +124,18 @@ export default function Admin() {
     for (let i = 0; i < files.length; i++) {
       const selectedFile = files[i];
       try {
-        const fileExt = selectedFile.name.split('.').pop();
         const cleanFileName = selectedFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const uniqueStorageName = `${Date.now()}_${Math.random().toString(36).substring(2, 6)}_${cleanFileName}`;
-        const filePath = `artifacts/${uniqueStorageName}`;
+        const uniqueStorageName = Date.now() + '_' + Math.random().toString(36).substring(2, 6) + '_' + cleanFileName;
+        const filePath = 'artifacts/' + uniqueStorageName;
 
-        // 1. Upload ke Supabase Storage
         const { error: storageError } = await supabase.storage
           .from(REFLECTION_BUCKET)
           .upload(filePath, selectedFile);
 
         if (storageError) throw storageError;
 
-        // Tentukan judul: jika diisi gunakan gabungan judul + nama file, jika kosong gunakan nama file
         const artifactTitle = baseTitle.trim()
-          ? `${baseTitle.trim()} - ${selectedFile.name.replace(/\.[^/.]+$/, '')}`
+          ? baseTitle.trim() + ' - ' + selectedFile.name.replace(/\.[^/.]+$/, '')
           : selectedFile.name.replace(/\.[^/.]+$/, '');
 
         const newArtifact = {
@@ -154,11 +147,10 @@ export default function Admin() {
           created_at: new Date().toISOString(),
         };
 
-        // 2. Simpan ke Database
-        const { error: dbError } = await (supabase as any).from('artifacts').insert([newArtifact]);
+        const { error: dbError } = await supabase.from('artifacts').insert([newArtifact]);
 
         if (dbError) {
-          await (supabase as any).from('reflection_documents').insert([
+          await supabase.from('reflection_documents').insert([
             {
               course_id: category,
               title: artifactTitle,
@@ -172,7 +164,7 @@ export default function Admin() {
 
         successCount++;
       } catch (err) {
-        console.error(`Gagal unggah file ${selectedFile.name}:`, err);
+        console.error('Gagal unggah file:', err);
         failCount++;
       }
     }
@@ -180,7 +172,7 @@ export default function Admin() {
     if (successCount > 0) {
       setMessage({
         type: 'success',
-        text: `Berhasil mengunggah ${successCount} file artefak!` + (failCount > 0 ? ` (${failCount} file gagal)` : ''),
+        text: 'Berhasil mengunggah ' + successCount + ' file artefak!' + (failCount > 0 ? ' (' + failCount + ' file gagal)' : ''),
       });
       setBaseTitle('');
       setDescription('');
@@ -197,28 +189,16 @@ export default function Admin() {
     if (!window.confirm('Apakah Anda yakin ingin menghapus artefak ini?')) return;
 
     try {
-      // 1. Hapus dari Supabase Storage jika path ada
       if (storagePath) {
-        const { error: storageErr } = await supabase.storage
-          .from(REFLECTION_BUCKET)
-          .remove([storagePath]);
-
-        if (storageErr) {
-          console.warn('Storage delete info:', storageErr);
-        }
+        await supabase.storage.from(REFLECTION_BUCKET).remove([storagePath]);
       }
 
-      // 2. Hapus entri dari database
-      const { error: dbErr1 } = await (supabase as any).from('artifacts').delete().eq('id', id);
-      const { error: dbErr2 } = await (supabase as any).from('reflection_documents').delete().eq('id', id);
-
-      if (dbErr1 && dbErr2) {
-        throw dbErr1;
-      }
+      await supabase.from('artifacts').delete().eq('id', id);
+      await supabase.from('reflection_documents').delete().eq('id', id);
 
       setMessage({ type: 'success', text: 'Artefak berhasil dihapus.' });
       setArtifacts((prev) => prev.filter((item) => item.id !== id));
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error delete:', err);
       setMessage({ type: 'error', text: 'Gagal menghapus file dari database.' });
     }
@@ -243,11 +223,11 @@ export default function Admin() {
             </p>
           </div>
 
-          {loginError && (
+          {loginError ? (
             <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 font-serif text-xs rounded-sm mb-4 flex items-center gap-2">
               <AlertCircle size={16} /> {loginError}
             </div>
-          )}
+          ) : null}
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
@@ -306,7 +286,6 @@ export default function Admin() {
 
       <hr className="border-line mb-10" />
 
-      {/* Form Upload Massal Admin */}
       <section className="bg-paper-warm border border-line p-6 md:p-8 rounded-sm mb-12">
         <h2 className="font-serif text-xl text-ink font-semibold mb-2 flex items-center gap-2">
           <Upload className="text-ppg" size={22} /> Unggah Artefak (Sekaligus Banyak)
@@ -315,18 +294,19 @@ export default function Admin() {
           Kamu bisa memilih beberapa file sekaligus (misal 6 file PDF) untuk satu mata kuliah.
         </p>
 
-        {message && (
+        {message ? (
           <div
-            className={`p-4 rounded-sm mb-6 font-serif text-sm flex items-center gap-3 ${
-              message.type === 'success'
+            className={
+              "p-4 rounded-sm mb-6 font-serif text-sm flex items-center gap-3 " +
+              (message.type === 'success'
                 ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
-                : 'bg-rose-50 border border-rose-200 text-rose-800'
-            }`}
+                : 'bg-rose-50 border border-rose-200 text-rose-800')
+            }
           >
             {message.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
             {message.text}
           </div>
-        )}
+        ) : null}
 
         <form onSubmit={handleUpload} className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -386,11 +366,11 @@ export default function Admin() {
               className="w-full px-4 py-2 border border-line rounded-sm bg-white font-serif text-sm file:mr-4 file:py-1.5 file:px-4 file:rounded-sm file:border-0 file:text-xs file:font-semibold file:bg-ppg file:text-white hover:file:bg-ppg-dark"
               required
             />
-            {files.length > 0 && (
+            {files.length > 0 ? (
               <p className="font-serif text-xs text-ppg font-semibold mt-2 flex items-center gap-1">
                 <Files size={14} /> {files.length} file dipilih dan siap diunggah.
               </p>
-            )}
+            ) : null}
           </div>
 
           <button
@@ -404,14 +384,13 @@ export default function Admin() {
               </>
             ) : (
               <>
-                <Upload size={18} /> Unggah {files.length > 0 ? `${files.length} File` : ''} Sekarang
+                <Upload size={18} /> Unggah {files.length > 0 ? files.length + ' File' : ''} Sekarang
               </>
             )}
           </button>
         </form>
       </section>
 
-      {/* Kelola / Hapus File */}
       <section className="space-y-6">
         <h2 className="font-serif text-xl text-ink font-semibold flex items-center gap-2 border-b border-line pb-3">
           <FileText className="text-ppg" size={22} /> Daftar Artefak Terunggah ({artifacts.length})
