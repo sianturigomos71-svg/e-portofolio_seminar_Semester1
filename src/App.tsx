@@ -22,7 +22,7 @@ function App() {
           <Route path="/dokumentasi" element={<Documentation />} />
           <Route path="/artefak" element={<Artifacts />} />
           <Route path="/kelola" element={<Admin />} />
-        </Route>
+        </Route> path="/kaitan-praktis" element={<PracticalConnections />} />
       </Routes>
     </HashRouter>
   );
