@@ -8,6 +8,7 @@ import Documentation from '@/pages/Documentation';
 import PdfViewer from '@/pages/PdfViewer';
 import Artifacts from '@/pages/Artifacts';
 import Admin from '@/pages/Admin';
+import PracticalConnections from '@/pages/PracticalConnections';
 
 function App() {
   return (
@@ -19,10 +20,11 @@ function App() {
           <Route path="/refleksi" element={<Reflections />} />
           <Route path="/refleksi/:courseId" element={<CourseDetail />} />
           <Route path="/refleksi/:courseId/dokumen" element={<PdfViewer />} />
+          <Route path="/kaitan-praktis" element={<PracticalConnections />} />
           <Route path="/dokumentasi" element={<Documentation />} />
           <Route path="/artefak" element={<Artifacts />} />
           <Route path="/kelola" element={<Admin />} />
-        </Route> path="/kaitan-praktis" element={<PracticalConnections />} />
+        </Route>
       </Routes>
     </HashRouter>
   );
