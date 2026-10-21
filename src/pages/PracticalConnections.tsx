@@ -41,18 +41,18 @@ const COURSES_DATA: PracticalConnectionItem[] = [
     ]
   },
   {
-    id: 'prinsip-pengajaran-asesmen-1',
-    title: 'Prinsip Pengajaran & Asesmen I',
-    shortLabel: 'PPA I',
+    id: 'pembelajaran-mendalam-asesmen',
+    title: 'Pembelajaran Mendalam dan Asesmen',
+    shortLabel: 'PMA',
     concepts: [
-      'Prinsip Teaching at the Right Level (TaRL) untuk menyelaraskan tingkat pembelajaran dengan kapasitas aktual siswa.',
-      'Penyusunan instrumen asesmen diagnostik, formatif, dan sumatif yang saling berkesinambungan.',
-      'Pemanfaatan rubrik penilaian autentik yang transparan untuk mengukur pencapaian kompetensi secara objektif.'
+      'Prinsip Pembelajaran Mendalam (Deep Learning) yang berfokus pada pemahaman bermakna, berpikir kritis, dan pemecahan masalah kontekstual.',
+      'Perancangan asesmen diagnostik, formatif, dan sumatif yang saling berkesinambungan untuk mengukur kompetensi nyata.',
+      'Prinsip Teaching at the Right Level (TaRL) dan pemanfaatan umpan balik berkelanjutan untuk mendukung proses belajar siswa.'
     ],
     futureChanges: [
-      'Menggunakan asesmen formatif sebagai sarana refleksif umpan balik perbaikan mengajar, bukan sekadar pemberian nilai angka.',
-      'Mengelompokkan siswa berdasarkan tingkat kesiapan belajar agar proses intervensi akademik lebih fokus dan efektif.',
-      'Menyusun variasi tugas evaluasi (portofolio, proyek, unjuk kerja) yang adil dan mengakomodasi keberagaman kemampuan.'
+      'Menerapkan strategi pembelajaran kontekstual yang mendorong keterlibatan aktif dan daya kritis peserta didik di kelas.',
+      'Menggunakan hasil asesmen formatif sebagai sarana umpan balik reflektif perbaikan mengajar, bukan sekadar penilaian angka.',
+      'Menyusun variasi instrumen evaluasi (portofolio, proyek, unjuk kerja) yang adil dan mengakomodasi tingkat pemahaman siswa.'
     ]
   },
   {
@@ -84,36 +84,6 @@ const COURSES_DATA: PracticalConnectionItem[] = [
       'Rutin mencatat jurnal refleksi harian setelah selesai mengajar untuk mengidentifikasi kekurangan dan perbaikan.',
       'Mempererat komunikasi dengan orang tua/wali siswa dalam memantau perkembangan belajar anak di luar sekolah.'
     ]
-  },
-  {
-    id: 'seminar-ppg',
-    title: 'Seminar Pendidikan Profesi Guru',
-    shortLabel: 'SEMINAR',
-    concepts: [
-      'Penyusunan Portofolio Digital Artefak Pembelajaran sebagai rekam jejak perkembangan kompetensi profesionalisme guru.',
-      'Penguasaan model-model refleksi kritis berkelanjutan (seperti Model Gibbs, ALACT, atau 4F/4P) terhadap praktik mengajar.',
-      'Metodologi Penelitian Tindakan Kelas (PTK) untuk menyelesaikan masalah pembelajaran nyata secara empiris.'
-    ],
-    futureChanges: [
-      'Membiasakan budaya menulis refleksi praktisi secara berkala sebagai bagian dari pengembangan diri berkelanjutan.',
-      'Membagikan artefak dan inovasi pembelajaran digital kepada komunitas guru (MGMP/KKG) untuk dampak yang lebih luas.',
-      'Secara konsisten menindaklanjuti hasil temuan refleksi menjadi perbaikan rancangan modul ajar periode berikutnya.'
-    ]
-  },
-  {
-    id: 'mata-kuliah-lainnya',
-    title: 'Mata Kuliah Lainnya / Umum',
-    shortLabel: 'UMUM',
-    concepts: [
-      'Literasi & Numerasi: Strategi penguatan membaca kritis dan penalaran matematis lintas disiplin ilmu.',
-      'Proyek Kepemimpinan: Perancangan dan pelaksanaan kontribusi sosial berdampak positif bagi lingkungan komunitas sekolah.',
-      'Teknologi Baru dalam Pengajaran: Integrasi platform digital, media pembelajaran interaktif, dan alat bantu AI.'
-    ],
-    futureChanges: [
-      'Selalu menyisipkan aktivitas pemantik literasi dan numerasi yang kontekstual di awal setiap sesi pembelajaran.',
-      'Memanfaatkan aplikasi digital dan teknologi interaktif untuk membuat penyampaian materi menjadi lebih visual dan menarik.',
-      'Menanamkan keterampilan Sosial-Emosional (SEL) agar siswa tidak hanya cerdas secara akademis tetapi juga berkarakter.'
-    ]
   }
 ];
 
@@ -122,6 +92,7 @@ export default function PracticalConnections() {
 
   return (
     <div className="fade-in max-w-editorial mx-auto px-6 lg:px-10 py-16" translate="no">
+      {/* Header Halaman */}
       <div className="mb-10 text-center md:text-left">
         <span className="font-serif text-xs text-ppg font-semibold bg-ppg/10 px-3 py-1 rounded-sm inline-flex items-center gap-1.5 mb-3">
           <Compass size={14} />
@@ -137,6 +108,7 @@ export default function PracticalConnections() {
 
       <hr className="border-line mb-10" />
 
+      {/* Tampilan Detail Saat Mata Kuliah Dipilih */}
       {selectedCourse ? (
         <div className="space-y-8 fade-in">
           <button
@@ -157,6 +129,7 @@ export default function PracticalConnections() {
               </h2>
             </div>
 
+            {/* Bagian 1: Konsep Utama */}
             <div className="space-y-4">
               <h3 className="font-serif text-lg text-ink font-semibold flex items-center gap-2">
                 <Lightbulb className="text-amber-600" size={20} />
@@ -172,6 +145,7 @@ export default function PracticalConnections() {
               </ul>
             </div>
 
+            {/* Bagian 2: Perubahan Masa Depan */}
             <div className="space-y-4 pt-4 border-t border-line-soft">
               <h3 className="font-serif text-lg text-ink font-semibold flex items-center gap-2">
                 <Sparkles className="text-ppg" size={20} />
@@ -189,6 +163,7 @@ export default function PracticalConnections() {
           </div>
         </div>
       ) : (
+        /* Tampilan Awal: Grid Jenis-jenis Mata Kuliah */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {COURSES_DATA.map((course) => (
             <div
