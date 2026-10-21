@@ -6,6 +6,7 @@ const navItems = [
   { label: 'Beranda', path: '/' },
   { label: 'Tentang', path: '/tentang' },
   { label: 'Refleksi', path: '/refleksi' },
+  { path: '/kaitan-praktis', label: 'Kaitan Praktis' },
   { label: 'Dokumentasi', path: '/dokumentasi' },
   { label: 'Artefak', path: '/artefak' },
   { label: 'Kelola', path: '/kelola' },
