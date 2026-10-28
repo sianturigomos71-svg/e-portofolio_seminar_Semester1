@@ -15,11 +15,10 @@ export interface ArtifactItem {
 const COURSES = [
   { id: 'Filosofi Pendidikan Indonesia', label: 'Filosofi Pendidikan Indonesia' },
   { id: 'Pemahaman Peserta Didik', label: 'Pemahaman tentang Peserta Didik & Pembelajarannya' },
-  { id: 'Prinsip Pengajaran & Asesmen I', label: 'Prinsip Pengajaran & Asesmen I' },
+  { id: 'Pembelajaran Mendalam & Asesmen Dasar', label: 'Pembelajaran Mendalam & Asesmen Dasar' },
   { id: 'Pembelajaran Berdiferensiasi', label: 'Pembelajaran Berdiferensiasi' },
-  { id: 'PPL I', label: 'PPL I' },
-  { id: 'Seminar PPG', label: 'Seminar Pendidikan Profesi Guru' },
-  { id: 'Mata Kuliah Lainnya', label: 'Mata Kuliah Lainnya / Umum' },
+  { id: 'PPL Terbimbing', label: 'PPL Terbimbing' },
+  { id: 'Pola Pikir Bertumbuh', label: 'Pola Pikir Bertumbuh' },
 ];
 
 export default function Admin() {
